@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { LayoutDashboard, Shield, UserCircle, LogOut } from 'lucide-react';
-import {
-  ChevronDownIcon,
-  HorizontaLDots,
-} from "../icons";
+import { LayoutDashboard, Shield, UserCircle, LogOut, Building2, Stethoscope, Users, ChevronDown, MoreVertical } from 'lucide-react';
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
 import swal from '../utils/swalHelper';
 
-// Logo import - using public asset path
-const primeLogo = '/images/logo/prime-logo.png';
+// Patients-MS Logo Component
+const PatientsMSLogo = () => (
+  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
+    <span className="text-white font-bold text-sm sm:text-base">P</span>
+  </div>
+);
 
 type NavItem = {
   name: string;
@@ -20,49 +20,130 @@ type NavItem = {
   onClick?: () => void;
 };
 
-const getNavItems = (handleLogout: () => void): NavItem[] => [
-  // {
-  //   icon: <GridIcon />,
-  //   name: "Dashboard",
-  //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  // },
-  {
-    icon: <LayoutDashboard />,
-    name: "Dashboard",
-    path: "/",
-  },
-  {
-    icon: <Shield />,
-    name: "Admins",
-    path: "/admins",
-  },
-  {
-    icon: <UserCircle />,
-    name: "Profile Settings",
-    path: "/profile",
-  },
-  {
-    icon: <LogOut />,
-    name: "Logout",
-    onClick: handleLogout,
-  },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
-];
+const getNavItems = (handleLogout: () => void, userRole?: string): NavItem[] => {
+  const items: NavItem[] = [
+    {
+      icon: <LayoutDashboard />,
+      name: "Dashboard",
+      path: userRole && ['SUPER_ADMIN', 'super_admin', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole) ? "/hospital/dashboard" : "/",
+    },
+  ];
+
+  // Admin panel items (for admin role)
+  if (!userRole || userRole === 'admin' || userRole === 'super_admin') {
+    items.push({
+      icon: <Shield />,
+      name: "Admins",
+      path: "/admins",
+    });
+  }
+
+  // Hospital Management items based on role
+  // super_admin (from Admin model) should have same access as SUPER_ADMIN (from User model)
+  if (userRole === 'SUPER_ADMIN' || userRole === 'super_admin') {
+    items.push(
+      {
+        icon: <Building2 />,
+        name: "Hospitals",
+        path: "/hospital/hospitals",
+      },
+      {
+        icon: <Building2 />,
+        name: "Clinics",
+        path: "/hospital/clinics",
+      },
+      {
+        icon: <Stethoscope />,
+        name: "Doctors",
+        path: "/hospital/doctors",
+      },
+      {
+        icon: <Users />,
+        name: "Patients",
+        path: "/hospital/patients",
+      }
+    );
+  } else if (userRole === 'HOSPITAL') {
+    items.push(
+      {
+        icon: <Building2 />,
+        name: "Clinics",
+        path: "/hospital/clinics",
+      },
+      {
+        icon: <Stethoscope />,
+        name: "Doctors",
+        path: "/hospital/doctors",
+      },
+      {
+        icon: <Users />,
+        name: "Patients",
+        path: "/hospital/patients",
+      }
+    );
+  } else if (userRole === 'CLINIC') {
+    items.push(
+      {
+        icon: <Stethoscope />,
+        name: "Doctors",
+        path: "/hospital/doctors",
+      },
+      {
+        icon: <Users />,
+        name: "Patients",
+        path: "/hospital/patients",
+      }
+    );
+  } else if (userRole === 'DOCTOR') {
+    items.push({
+      icon: <Users />,
+      name: "Patients",
+      path: "/hospital/patients",
+    });
+  }
+
+  // Common items
+  items.push(
+    {
+      icon: <UserCircle />,
+      name: "Profile Settings",
+      path: "/profile",
+    },
+    {
+      icon: <LogOut />,
+      name: "Logout",
+      onClick: handleLogout,
+    }
+  );
+
+  return items;
+};
 
 const othersItems: NavItem[] = [
 ];
 
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get user role from user object or localStorage
+  const getUserRole = (): string | undefined => {
+    if (user) {
+      return (user as any).role;
+    }
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        return userData.role;
+      }
+    } catch (e) {
+      console.error('Error parsing user:', e);
+    }
+    return undefined;
+  };
   
   // Close sidebar on mobile when clicking a link
   const handleLinkClick = () => {
@@ -96,7 +177,18 @@ const AppSidebar: React.FC = () => {
     }
   };
 
-  const navItems = getNavItems(handleLogout);
+  const userRole = getUserRole();
+  const navItems = getNavItems(handleLogout, userRole);
+  
+  // Debug: Log user role to console
+  useEffect(() => {
+    console.log('🔍 Sidebar Debug:', {
+      userRole,
+      user,
+      navItemsCount: navItems.length,
+      navItems: navItems.map(item => ({ name: item.name, path: item.path }))
+    });
+  }, [userRole, user, navItems]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -192,7 +284,7 @@ const AppSidebar: React.FC = () => {
                 <span className="menu-item-text">{nav.name}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
+                <ChevronDown
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${
                     openSubmenu?.type === menuType &&
                     openSubmenu?.index === index
@@ -323,17 +415,10 @@ const AppSidebar: React.FC = () => {
         }`}
       >
         <Link to="/" onClick={handleLinkClick} className="flex items-center gap-3">
-          <img
-            src={primeLogo}
-            alt="Prime Health Logo"
-            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-contain flex-shrink-0"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+          <PatientsMSLogo />
           {(isExpanded || isHovered || isMobileOpen) && (
             <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-              PrimeHealth
+              Patients-MS
             </span>
           )}
         </Link>
@@ -352,7 +437,7 @@ const AppSidebar: React.FC = () => {
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Menu"
                 ) : (
-                  <HorizontaLDots className="size-6" />
+                  <MoreVertical className="size-6" />
                 )}
               </h2>
               {renderMenuItems(navItems, "main")}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { EyeCloseIcon, EyeIcon } from "../../icons";
+import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import { useAuth } from "../../context/AuthContext";
@@ -136,19 +136,15 @@ export default function RegisterForm() {
   return (
     <div className="relative z-10 flex flex-col items-center">
       <Link to="/" className="">
-        <img
-          width={200}
-          height={200}
-          src="/images/logo/prime-logo.png"
-          alt="Prime Health Logo"
-          className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full object-contain"
-        />
+        <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-brand-600 flex items-center justify-center">
+          <span className="text-2xl sm:text-3xl font-bold text-white">P-MS</span>
+        </div>
       </Link>
       <h1 className="mb-2 mt-2 text-2xl font-bold text-gray-800 dark:text-white text-center">
         Create Admin Account
       </h1>
       <p className="mb-8 text-sm text-gray-500 dark:text-gray-400 text-center">
-        Register for Prime Health Admin Dashboard
+        Register for Patients-MS Admin Dashboard
       </p>
       <form className="w-full space-y-6" onSubmit={handleSubmit}>
         {/* General Error Message */}
@@ -183,7 +179,7 @@ export default function RegisterForm() {
           </Label>
           <Input 
             id="email" 
-            placeholder="admin@primehealth.com" 
+            placeholder="admin@patientsms.com" 
             type="email" 
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
@@ -218,9 +214,9 @@ export default function RegisterForm() {
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               {showPassword ? (
-                <EyeIcon className="h-5 w-5 fill-current" />
+                <Eye className="h-5 w-5" />
               ) : (
-                <EyeCloseIcon className="h-5 w-5 fill-current" />
+                <EyeOff className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -284,9 +280,9 @@ export default function RegisterForm() {
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               {showConfirmPassword ? (
-                <EyeIcon className="h-5 w-5 fill-current" />
+                <Eye className="h-5 w-5" />
               ) : (
-                <EyeCloseIcon className="h-5 w-5 fill-current" />
+                <EyeOff className="h-5 w-5" />
               )}
             </button>
           </div>

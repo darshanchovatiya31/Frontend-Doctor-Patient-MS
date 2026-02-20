@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { EyeCloseIcon, EyeIcon } from "../../icons";
+import { Eye, EyeOff } from "lucide-react";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import { useAuth } from "../../context/AuthContext";
@@ -54,9 +54,27 @@ export default function SignInForm() {
       setError("");
       await login(email, password);
       
+      // Get user role from localStorage to determine redirect
+      const storedUser = localStorage.getItem('user');
+      let redirectPath = '/';
+      
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          const userRole = userData.role;
+          
+          // Redirect super_admin to hospital dashboard
+          if (userRole === 'super_admin' || userRole === 'SUPER_ADMIN') {
+            redirectPath = '/hospital/dashboard';
+          }
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+      
       swal.success('Success', 'Login successful!');
       
-      navigate('/');
+      navigate(redirectPath);
     } catch (error: any) {
       const errorMessage = error.message || 'Invalid email or password';
       
@@ -80,16 +98,12 @@ export default function SignInForm() {
   return (
     <div className="relative z-10 flex flex-col items-center">
       <Link to="/" className="">
-        <img
-          width={200}
-          height={200}
-          src="/images/logo/prime-logo.png"
-          alt="Prime Health Logo"
-          className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full object-contain"
-        />
+        <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-brand-600 flex items-center justify-center">
+          <span className="text-2xl sm:text-3xl font-bold text-white">P</span>
+        </div>
       </Link>
       <h1 className="mb-2  mt-2 text-2xl font-bold text-gray-800 dark:text-white text-center">
-        Welcome to Prime Health Admin
+        Welcome to Patients-MS
       </h1>
       <p className="mb-8 text-sm text-gray-500 dark:text-gray-400 text-center">
         Securely access your admin dashboard
@@ -108,7 +122,7 @@ export default function SignInForm() {
           </Label>
           <Input 
             id="email" 
-            placeholder="admin@primehealth.com" 
+            placeholder="admin@patientsms.com" 
             type="email" 
             value={email}
             onChange={(e) => {
@@ -150,9 +164,9 @@ export default function SignInForm() {
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
               {showPassword ? (
-                <EyeIcon className="h-5 w-5 fill-current" />
+                <Eye className="h-5 w-5" />
               ) : (
-                <EyeCloseIcon className="h-5 w-5 fill-current" />
+                <EyeOff className="h-5 w-5" />
               )}
             </button>
           </div>
@@ -161,7 +175,7 @@ export default function SignInForm() {
           )}
         </div>
         <button
-          className="w-full bg-green-600 hover:bg-green-700 text-white mb-4 py-2 px-4 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-brand-600 hover:bg-brand-700 text-white mb-6 py-2 px-4 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
           disabled={loading}
         >
@@ -173,7 +187,7 @@ export default function SignInForm() {
             Don't have an account?{' '}
             <Link 
               to="/register" 
-              className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors"
+              className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
             >
               Register
             </Link>

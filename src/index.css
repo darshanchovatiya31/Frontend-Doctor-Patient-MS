@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap")
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap")
 layer(base);
 
 @import "tailwindcss";
@@ -7,7 +7,7 @@ layer(base);
 
 @theme {
   --font-*: initial;
-  --font-outfit: Outfit, sans-serif;
+  --font-inter: Inter, sans-serif;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -41,18 +41,18 @@ layer(base);
   --color-white: #ffffff;
   --color-black: #101828;
 
-  --color-brand-25: #f0fdf4;
-  --color-brand-50: #dcfce7;
-  --color-brand-100: #bbf7d0;
-  --color-brand-200: #86efac;
-  --color-brand-300: #4ade80;
-  --color-brand-400: #22c55e;
-  --color-brand-500: #16a34a;
-  --color-brand-600: #15803d;
-  --color-brand-700: #166534;
-  --color-brand-800: #14532d;
-  --color-brand-900: #14432a;
-  --color-brand-950: #052e16;
+  --color-brand-25: #f0fdfa;
+  --color-brand-50: #ccfbf1;
+  --color-brand-100: #99f6e4;
+  --color-brand-200: #5eead4;
+  --color-brand-300: #2dd4bf;
+  --color-brand-400: #14b8a6;
+  --color-brand-500: #0d9488;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+  --color-brand-950: #042f2e;
 
   --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
@@ -186,7 +186,7 @@ layer(base);
     cursor: pointer;
   }
   body {
-    @apply relative font-normal font-outfit z-1 bg-gray-50;
+    @apply relative font-normal font-inter z-1 bg-gray-50;
   }
 }
 
@@ -195,7 +195,7 @@ layer(base);
 }
 
 @utility menu-item-active {
-  @apply bg-emerald-50 text-emerald-600 dark:bg-emerald-500/[0.12] dark:text-emerald-400;
+  @apply bg-brand-50 text-brand-600 dark:bg-brand-500/[0.12] dark:text-brand-400;
 }
 
 @utility menu-item-inactive {
@@ -207,7 +207,7 @@ layer(base);
 }
 
 @utility menu-item-icon-active {
-  @apply text-emerald-600 dark:text-emerald-400;
+  @apply text-brand-600 dark:text-brand-400;
 }
 
 @utility menu-item-icon-size {

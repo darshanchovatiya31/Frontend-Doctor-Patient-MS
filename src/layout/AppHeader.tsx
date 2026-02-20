@@ -86,7 +86,7 @@ const AppHeader: React.FC = () => {
             <img
               className="h-8 w-8 rounded-full object-contain"
               src="/images/logo/prime-logo.png"
-              alt="Prime Health Logo"
+              alt="Patients-MS Logo"
             />
           </Link>
 

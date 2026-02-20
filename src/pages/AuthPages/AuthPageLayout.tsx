@@ -8,7 +8,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6 sm:p-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-brand-100 to-blue-light-50 dark:from-gray-900 dark:via-brand-950 dark:to-gray-800 p-6 sm:p-8">
       <div className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 md:p-10">
         {/* Optional GridShape for subtle background pattern */}
         <div className="absolute inset-0 opacity-10 dark:opacity-5">

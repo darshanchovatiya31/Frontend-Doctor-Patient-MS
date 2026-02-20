@@ -6,8 +6,8 @@ export default function SignIn() {
   return (
     <>
       <PageMeta
-        title="Prime Health Admin Sign In | Professional Dashboard"
-        description="Sign in to the Prime Health Admin Panel for secure access to healthcare management tools."
+        title="Patients-MS Sign In | Professional Dashboard"
+        description="Sign in to the Patients-MS Admin Panel for secure access to healthcare management tools."
       />
       <AuthLayout>
         <SignInForm />

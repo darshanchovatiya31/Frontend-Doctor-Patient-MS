@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Admin } from '../services/api';
+import { Admin, User } from '../services/api';
 import apiService from '../services/api';
 
 interface AuthContextType {
-  user: Admin | null;
+  user: Admin | User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (adminData: { name: string; email: string; password: string }) => Promise<void>;
@@ -27,7 +27,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<Admin | null>(null);
+  const [user, setUser] = useState<Admin | User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +56,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      // Try hospital management login first
+      try {
+        const response = await apiService.hospitalLogin(email, password);
+        
+        if (response.data && response.data.token && response.data.user) {
+          const token = response.data.token;
+          const userData = response.data.user;
+          
+          // Set state
+          setToken(token);
+          setUser(userData);
+          
+          // Store in localStorage
+          localStorage.setItem('authToken', token);
+          localStorage.setItem('user', JSON.stringify(userData));
+          return;
+        }
+      } catch (hospitalError: any) {
+        // If hospital login fails, try admin login
+        console.log('Hospital login failed, trying admin login...');
+      }
+      
+      // Try admin login
       const response = await apiService.login(email, password);
       
       if (response.data && response.data.token && response.data.admin) {
