@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
 import apiService, { Clinic, Hospital } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -17,7 +16,6 @@ export default function ClinicsPage() {
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [formData, setFormData] = useState({ name: '', hospitalId: '', email: '', password: '' });
   const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');

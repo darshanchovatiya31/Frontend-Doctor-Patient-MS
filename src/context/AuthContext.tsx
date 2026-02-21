@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const userData = JSON.parse(storedUser);
           // Ensure token is set in apiService
-          apiService.token = storedToken;
+          apiService.setToken(storedToken);
           setToken(storedToken);
           setUser(userData);
         } catch (error) {

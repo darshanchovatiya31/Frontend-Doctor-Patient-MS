@@ -286,11 +286,11 @@ export default function Admins() {
                           <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{admin.email}</div>
                           <div className="flex items-center gap-2 mt-2 flex-wrap">
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              admin.role === 'super_admin' 
+                              admin.role === 'SUPER_ADMIN' 
                                 ? 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-400'
                                 : 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400'
                             }`}>
-                              {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                              {admin.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
                             </span>
                             <span 
                               className={`inline-flex rounded-full px-2 py-1 text-xs font-medium cursor-pointer transition-colors duration-200 hover:opacity-80 ${
@@ -374,11 +374,11 @@ export default function Admins() {
                         </td>
                         <td className="px-4 xl:px-6 py-4">
                           <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                            admin.role === 'super_admin' 
+                            admin.role === 'SUPER_ADMIN' 
                               ? 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-400'
                               : 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400'
                           }`}>
-                            {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                            {admin.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
                           </span>
                         </td>
                         <td className="px-4 xl:px-6 py-4">

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import apiService, { Hospital } from "../../services/api";
 import swal from '../../utils/swalHelper';
-import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight, Building2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 
 export default function HospitalsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);

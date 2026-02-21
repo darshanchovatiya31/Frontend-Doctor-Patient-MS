@@ -5,7 +5,6 @@ import {
   Building2, 
   Stethoscope, 
   Users, 
-  Activity,
   Calendar,
   UserCheck
 } from 'lucide-react';

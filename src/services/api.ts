@@ -24,6 +24,7 @@ export interface PaginationParams {
 
 // Admin is now a User with role SUPER_ADMIN
 // Using User interface for admin/super_admin
+export type Admin = User;
 
 export interface DashboardStats {
   totalAdmins?: number;
@@ -49,6 +50,8 @@ export interface User {
   hospitalId?: string;
   clinicId?: string;
   isActive: boolean;
+  profileImage?: string;
+  lastLogin?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -120,6 +123,11 @@ class ApiService {
 
   constructor() {
     this.token = localStorage.getItem('authToken');
+  }
+
+  // Public method to set token
+  setToken(token: string | null): void {
+    this.token = token;
   }
 
   // Get base URL (without /api/admin) for image URLs

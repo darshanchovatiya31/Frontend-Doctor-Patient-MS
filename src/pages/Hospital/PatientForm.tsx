@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import apiService, { Patient, Hospital, Clinic, Doctor } from "../../services/api";
+import apiService, { Hospital, Clinic, Doctor } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { ArrowLeft, Save } from 'lucide-react';
 

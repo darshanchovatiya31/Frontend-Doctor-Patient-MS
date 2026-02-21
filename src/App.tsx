@@ -1,7 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router";
-import { lazy, Suspense } from "react";
 import SignIn from "./pages/AuthPages/SignIn";
-import Register from "./pages/AuthPages/Register";
 import NotFound from "./pages/OtherPage/NotFound";
 
 import UserProfiles from "./pages/UserProfiles";
@@ -19,7 +17,7 @@ import PatientForm from "./pages/Hospital/PatientForm";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   
   if (loading) {
     return (

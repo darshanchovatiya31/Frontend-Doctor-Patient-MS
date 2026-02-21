@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Admin } from "../../services/api";
+import { Admin, UserRole } from "../../services/api";
 import swal from "../../utils/swalHelper";
 
 interface AdminModalProps {
@@ -14,7 +14,7 @@ export default function AdminModal({ admin, onClose, onSubmit, title }: AdminMod
     name: "",
     email: "",
     password: "",
-    role: "admin" as "admin" | "super_admin",
+    role: "SUPER_ADMIN" as UserRole,
     isActive: true,
   });
 
@@ -39,7 +39,7 @@ export default function AdminModal({ admin, onClose, onSubmit, title }: AdminMod
         name: "",
         email: "",
         password: "",
-        role: "admin",
+        role: "SUPER_ADMIN",
         isActive: true,
       });
     }
@@ -219,11 +219,10 @@ export default function AdminModal({ admin, onClose, onSubmit, title }: AdminMod
             </label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as "admin" | "super_admin" })}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
             >
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
             </select>
           </div>
 
