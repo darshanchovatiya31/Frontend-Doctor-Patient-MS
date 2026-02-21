@@ -7,7 +7,6 @@ import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Hospital Management Pages
@@ -54,10 +53,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
   
   // Redirect based on user role
-  let redirectPath = '/';
+  let redirectPath = '/hospital/dashboard';
   if (user) {
     const userRole = (user as any).role;
-    if (userRole === 'SUPER_ADMIN') {
+    if (['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole)) {
       redirectPath = '/hospital/dashboard';
     }
   }
@@ -71,12 +70,14 @@ function DashboardRedirect() {
   
   if (user) {
     const userRole = (user as any).role;
-    if (userRole === 'SUPER_ADMIN') {
+    // Redirect all roles to their appropriate dashboard
+    if (['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole)) {
       return <Navigate to="/hospital/dashboard" replace />;
     }
   }
   
-  return <Home />;
+  // Fallback: redirect to hospital dashboard if no role matches
+  return <Navigate to="/hospital/dashboard" replace />;
 }
 
 function AppRoutes() {
