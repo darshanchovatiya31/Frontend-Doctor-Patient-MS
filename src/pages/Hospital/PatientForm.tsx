@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import apiService, { Hospital, Clinic, Doctor } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { ArrowLeft, Save } from 'lucide-react';
+import { FormSkeleton } from '../../components/common/Skeleton';
 
 export default function PatientForm() {
   const { id } = useParams();
@@ -218,8 +219,8 @@ export default function PatientForm() {
 
   if (loading && isEdit) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-600"></div>
+      <div className="max-w-4xl mx-auto p-6">
+        <FormSkeleton />
       </div>
     );
   }

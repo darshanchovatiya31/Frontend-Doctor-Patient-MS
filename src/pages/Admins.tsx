@@ -6,6 +6,7 @@ import ActionButton from '../components/ui/ActionButton';
 import SearchInput from '../components/ui/SearchInput';
 import PaginationControls from '../components/ui/PaginationControls';
 import { useDebounce } from '../hooks';
+import { TableSkeleton } from '../components/common/Skeleton';
 
 export default function Admins() {
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -129,8 +130,8 @@ export default function Admins() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <TableSkeleton rows={5} columns={6} />
       </div>
     );
   }

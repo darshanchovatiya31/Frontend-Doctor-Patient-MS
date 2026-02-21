@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import apiService, { Clinic, Hospital } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { TableSkeleton } from '../../components/common/Skeleton';
 
 export default function ClinicsPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -242,9 +243,7 @@ export default function ClinicsPage() {
       {/* Clinics Table */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-          </div>
+          <TableSkeleton rows={5} columns={6} />
         ) : clinics.length > 0 ? (
           <>
             {/* Mobile Card View */}

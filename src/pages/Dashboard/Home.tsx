@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import apiService, { DashboardStats, Admin } from "../../services/api";
 import swal from '../../utils/swalHelper';
+import { DashboardSkeleton } from '../../components/common/Skeleton';
 
 export default function Home() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -24,11 +25,7 @@ export default function Home() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

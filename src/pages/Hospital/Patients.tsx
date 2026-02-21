@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import apiService, { Patient } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { Plus, Search, Edit, Trash2, Download, FileDown } from 'lucide-react';
+import { TableSkeleton } from '../../components/common/Skeleton';
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -150,9 +151,7 @@ export default function PatientsPage() {
       {/* Patients Table */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-          </div>
+          <TableSkeleton rows={5} columns={6} />
         ) : patients.length > 0 ? (
           <>
             {/* Mobile Card View */}

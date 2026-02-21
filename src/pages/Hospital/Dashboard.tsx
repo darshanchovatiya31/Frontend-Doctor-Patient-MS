@@ -8,6 +8,7 @@ import {
   Calendar,
   UserCheck
 } from 'lucide-react';
+import { DashboardSkeleton } from '../../components/common/Skeleton';
 
 export default function HospitalDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -44,11 +45,7 @@ export default function HospitalDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const userRole = user?.role || '';

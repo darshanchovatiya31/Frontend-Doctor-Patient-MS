@@ -776,3 +776,34 @@ span.flatpickr-weekday,
 .simplebar-scrollbar.simplebar-visible:before {
   @apply opacity-100;
 }
+
+/* Skeleton Loader Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-\[shimmer_2s_infinite\] {
+  background: linear-gradient(
+    90deg,
+    rgb(229, 231, 235) 0%,
+    rgb(243, 244, 246) 50%,
+    rgb(229, 231, 235) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.dark .animate-\[shimmer_2s_infinite\] {
+  background: linear-gradient(
+    90deg,
+    rgb(55, 65, 81) 0%,
+    rgb(75, 85, 99) 50%,
+    rgb(55, 65, 81) 100%
+  );
+  background-size: 1000px 100%;
+}
