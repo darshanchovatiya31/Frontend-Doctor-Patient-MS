@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onClick, onToggle }) => {
           <Link to="/" className="lg:hidden">
             <img
               className="h-8 w-8 rounded-full object-contain"
-              src="/images/logo/prime-logo.png"
+              src="/favicon.png"
               alt="Patients-MS Logo"
             />
           </Link>

@@ -51,7 +51,7 @@ const AppHeader: React.FC = () => {
           </button>
 
           <Link to="/" className="lg:hidden">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0891b2' }}>
               <span className="text-white font-bold text-sm sm:text-base">P</span>
             </div>
           </Link>

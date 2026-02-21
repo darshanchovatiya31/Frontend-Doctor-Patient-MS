@@ -7,6 +7,10 @@ import App from "./App.tsx";
 import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 
+// Register service worker for PWA (only in production)
+// vite-plugin-pwa will automatically inject the service worker registration
+// This is handled by the plugin during build time
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
