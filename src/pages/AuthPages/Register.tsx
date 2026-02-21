@@ -6,8 +6,8 @@ export default function Register() {
   return (
     <>
       <PageMeta
-        title="Patients-MS Register | Create Account"
-        description="Register for Patients-MS Admin Panel to access healthcare management tools."
+        title="Patients-MS Register | Create Super Admin Account"
+        description="Register for Patients-MS Super Admin Panel to access healthcare management tools."
       />
       <AuthLayout>
         <RegisterForm />

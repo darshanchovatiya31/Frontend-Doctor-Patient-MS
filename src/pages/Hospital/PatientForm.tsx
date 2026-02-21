@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import apiService, { Patient } from "../../services/api";
+import apiService, { Patient, Hospital, Clinic, Doctor } from "../../services/api";
 import swal from '../../utils/swalHelper';
 import { ArrowLeft, Save } from 'lucide-react';
 
@@ -8,8 +8,11 @@ export default function PatientForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', mobile: '', address: '' });
+  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
   const [user, setUser] = useState<any>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const isEdit = !!id;
 
   useEffect(() => {
@@ -19,15 +22,20 @@ export default function PatientForm() {
         const userData = JSON.parse(storedUser);
         setUser(userData);
         
-        // Check permissions
-        if (isEdit && userData.role === 'DOCTOR') {
-          swal.error('Error', 'Doctors cannot edit patients');
-          navigate('/hospital/patients');
-          return;
+        // Load dropdowns based on role
+        if (!isEdit) {
+          if (userData.role === 'SUPER_ADMIN') {
+            fetchHospitals();
+          } else if (userData.role === 'HOSPITAL') {
+            fetchClinicsForHospital();
+          } else if (userData.role === 'CLINIC') {
+            fetchDoctorsForClinic();
+          }
         }
         
-        if (!isEdit && userData.role !== 'DOCTOR') {
-          swal.error('Error', 'Only doctors can create patients');
+        // Check permissions for editing
+        if (isEdit && userData.role === 'DOCTOR') {
+          swal.error('Error', 'Doctors cannot edit patients');
           navigate('/hospital/patients');
           return;
         }
@@ -41,6 +49,96 @@ export default function PatientForm() {
     }
   }, [id]);
 
+  // Fetch doctors when clinic is selected (for super admin)
+  useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN' && formData.clinicId && !isEdit) {
+      fetchDoctors();
+    }
+  }, [formData.clinicId]);
+
+  // Fetch clinics when hospital is selected (for super admin)
+  useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN' && formData.hospitalId && !isEdit) {
+      fetchClinics();
+      setFormData(prev => ({ ...prev, clinicId: '', doctorId: '' }));
+    }
+  }, [formData.hospitalId]);
+
+  // Fetch doctors when clinic is selected (for hospital)
+  useEffect(() => {
+    if (user?.role === 'HOSPITAL' && formData.clinicId && !isEdit) {
+      fetchDoctors();
+      setFormData(prev => ({ ...prev, doctorId: '' }));
+    }
+  }, [formData.clinicId]);
+
+  const fetchHospitals = async () => {
+    try {
+      const response = await apiService.getHospitals({ page: 1, limit: 1000 });
+      if (response.status === 200 && response.data) {
+        setHospitals(response.data.docs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    }
+  };
+
+  const fetchClinics = async () => {
+    try {
+      const params: any = { page: 1, limit: 1000 };
+      if (user?.role === 'SUPER_ADMIN' && formData.hospitalId) {
+        params.hospitalId = formData.hospitalId;
+      }
+      const response = await apiService.getClinics(params);
+      if (response.status === 200 && response.data) {
+        setClinics(response.data.docs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clinics:', error);
+    }
+  };
+
+  const fetchClinicsForHospital = async () => {
+    try {
+      const response = await apiService.getClinics({ page: 1, limit: 1000 });
+      if (response.status === 200 && response.data) {
+        setClinics(response.data.docs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clinics:', error);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    try {
+      const params: any = { page: 1, limit: 1000 };
+      if (user?.role === 'SUPER_ADMIN' && formData.clinicId) {
+        params.clinicId = formData.clinicId;
+      } else if (user?.role === 'HOSPITAL' && formData.clinicId) {
+        params.clinicId = formData.clinicId;
+      } else if (user?.role === 'CLINIC') {
+        params.clinicId = user._id;
+      }
+      const response = await apiService.getDoctors(params);
+      if (response.status === 200 && response.data) {
+        setDoctors(response.data.docs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
+
+  const fetchDoctorsForClinic = async () => {
+    try {
+      const response = await apiService.getDoctors({ page: 1, limit: 1000 });
+      if (response.status === 200 && response.data) {
+        setDoctors(response.data.docs || []);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    }
+  };
+
   const fetchPatient = async () => {
     try {
       setLoading(true);
@@ -51,6 +149,9 @@ export default function PatientForm() {
           name: patient.name,
           mobile: patient.mobile,
           address: patient.address || '',
+          doctorId: typeof patient.doctorId === 'object' ? patient.doctorId._id : patient.doctorId || '',
+          clinicId: typeof patient.clinicId === 'object' ? patient.clinicId._id : patient.clinicId || '',
+          hospitalId: typeof patient.hospitalId === 'object' ? patient.hospitalId._id : patient.hospitalId || '',
         });
       } else {
         throw new Error(response.message || 'Failed to load patient');
@@ -76,30 +177,35 @@ export default function PatientForm() {
     try {
       setLoading(true);
       if (isEdit) {
-        const response = await apiService.updatePatient({
+        await apiService.updatePatient({
           id: id!,
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
         });
-        if (response.status === 200) {
-          swal.success('Success', 'Patient updated successfully');
-          navigate('/hospital/patients');
-        } else {
-          throw new Error(response.message || 'Failed to update patient');
-        }
+        swal.success('Success', 'Patient updated successfully');
+        navigate('/hospital/patients');
       } else {
-        const response = await apiService.createPatient({
+        const createData: any = {
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
-        });
-        if (response.status === 200) {
-          swal.success('Success', 'Patient created successfully');
-          navigate('/hospital/patients');
-        } else {
-          throw new Error(response.message || 'Failed to create patient');
+        };
+
+        // Add doctorId if provided (for super admin, hospital, clinic)
+        if (formData.doctorId) {
+          createData.doctorId = formData.doctorId;
         }
+        if (formData.clinicId && user?.role === 'SUPER_ADMIN') {
+          createData.clinicId = formData.clinicId;
+        }
+        if (formData.hospitalId && user?.role === 'SUPER_ADMIN') {
+          createData.hospitalId = formData.hospitalId;
+        }
+
+        await apiService.createPatient(createData);
+        swal.success('Success', 'Patient created successfully');
+        navigate('/hospital/patients');
       }
     } catch (error: any) {
       swal.error('Error', error.message || 'Operation failed');
@@ -108,10 +214,12 @@ export default function PatientForm() {
     }
   };
 
+  const userRole = user?.role || '';
+
   if (loading && isEdit) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-600"></div>
       </div>
     );
   }
@@ -139,6 +247,86 @@ export default function PatientForm() {
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {userRole === 'SUPER_ADMIN' && !isEdit && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Hospital <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.hospitalId}
+                  onChange={(e) => setFormData({ ...formData, hospitalId: e.target.value, clinicId: '', doctorId: '' })}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+                >
+                  <option value="">Select Hospital</option>
+                  {hospitals.map((h) => (
+                    <option key={h._id} value={h._id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Clinic <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.clinicId}
+                  onChange={(e) => setFormData({ ...formData, clinicId: e.target.value, doctorId: '' })}
+                  disabled={!formData.hospitalId}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">{formData.hospitalId ? 'Select Clinic' : 'Select Hospital first'}</option>
+                  {clinics.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+          {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && !isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Doctor <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.doctorId}
+                onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
+                disabled={(userRole === 'SUPER_ADMIN' && !formData.clinicId) || (userRole === 'HOSPITAL' && !formData.clinicId)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {userRole === 'SUPER_ADMIN' && !formData.clinicId
+                    ? 'Select Clinic first'
+                    : userRole === 'HOSPITAL' && !formData.clinicId
+                    ? 'Select Clinic first'
+                    : 'Select Doctor'}
+                </option>
+                {doctors.map((d) => (
+                  <option key={d._id} value={d._id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {userRole === 'HOSPITAL' && !isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Clinic <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={formData.clinicId}
+                onChange={(e) => setFormData({ ...formData, clinicId: e.target.value, doctorId: '' })}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+              >
+                <option value="">Select Clinic</option>
+                {clinics.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Name <span className="text-red-500">*</span>
@@ -148,7 +336,7 @@ export default function PatientForm() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
               placeholder="Enter patient name"
             />
           </div>
@@ -167,7 +355,7 @@ export default function PatientForm() {
                 const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                 setFormData({ ...formData, mobile: value });
               }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
               placeholder="Enter 10-digit mobile number"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -183,23 +371,23 @@ export default function PatientForm() {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               rows={4}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
               placeholder="Enter patient address (optional)"
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-3 sm:gap-4 justify-end">
             <button
               type="button"
               onClick={() => navigate('/hospital/patients')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300"
+              className="flex-1 sm:flex-initial rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="flex-1 sm:flex-initial inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm hover:shadow-md"
             >
               <Save className="h-4 w-4" />
               {loading ? 'Saving...' : isEdit ? 'Update Patient' : 'Create Patient'}
@@ -210,4 +398,3 @@ export default function PatientForm() {
     </>
   );
 }
-

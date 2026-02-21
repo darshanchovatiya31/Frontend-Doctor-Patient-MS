@@ -63,8 +63,8 @@ export default function SignInForm() {
           const userData = JSON.parse(storedUser);
           const userRole = userData.role;
           
-          // Redirect super_admin to hospital dashboard
-          if (userRole === 'super_admin' || userRole === 'SUPER_ADMIN') {
+          // Redirect SUPER_ADMIN to hospital dashboard
+          if (userRole === 'SUPER_ADMIN') {
             redirectPath = '/hospital/dashboard';
           }
         } catch (e) {
@@ -181,18 +181,6 @@ export default function SignInForm() {
         >
           {loading ? 'Signing In...' : 'Sign In'}
         </button>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
-            <Link 
-              to="/register" 
-              className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
-            >
-              Register
-            </Link>
-          </p>
-        </div>
       </form>
     </div>
   );

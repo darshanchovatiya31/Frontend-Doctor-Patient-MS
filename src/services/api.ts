@@ -22,17 +22,8 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface Admin {
-  _id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'super_admin';
-  profileImage?: string;
-  lastLogin?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Admin is now a User with role SUPER_ADMIN
+// Using User interface for admin/super_admin
 
 export interface DashboardStats {
   totalAdmins?: number;
@@ -63,31 +54,47 @@ export interface User {
 }
 
 export interface Hospital {
+  userEmail?: string;
+  hasPassword?: boolean;
   _id: string;
   name: string;
+  email?: string;
   address?: string;
   isActive: boolean;
+  role?: string;
+  hospitalId?: string | null;
+  clinicId?: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Clinic {
+  userEmail?: string;
+  hasPassword?: boolean;
   _id: string;
   name: string;
+  email?: string;
   hospitalId: string | Hospital;
   isActive: boolean;
+  role?: string;
+  clinicId?: string | null;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Doctor {
+  userEmail?: string;
+  hasPassword?: boolean;
   _id: string;
-  userId: string | User;
+  userId?: string; // For compatibility, same as _id
+  name: string;
+  email?: string;
   clinicId: string | Clinic;
   hospitalId: string | Hospital;
   isActive: boolean;
+  role?: string;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -191,6 +198,15 @@ class ApiService {
         throw new Error('Request failed');
       }
       
+      // Check if backend returned an error with data: 0 (status 200 but error condition)
+      // This is the pattern used by the backend response utility
+      if (data.data === 0 || data.data === null) {
+        if (data.message) {
+          throw new Error(data.message);
+        }
+        throw new Error('Request failed');
+      }
+      
       return data;
     } catch (error: any) {
       console.error('API Request failed:', {
@@ -208,11 +224,11 @@ class ApiService {
     }
   }
 
-  // Authentication (Admin Panel)
-  async login(email: string, password: string): Promise<ApiResponse<{ token: string; admin: Admin }>> {
+  // Authentication (Admin Panel - Super Admin from User model)
+  async login(email: string, password: string): Promise<ApiResponse<{ token: string; admin: User }>> {
   const response = await this.request('/login', {
     body: JSON.stringify({ email, password }),
-  }, ADMIN_API_BASE_URL) as ApiResponse<{ token: string; admin: Admin }>; // ✅ assert type
+  }, ADMIN_API_BASE_URL) as ApiResponse<{ token: string; admin: User }>;
 
   // Check if login was successful - backend returns message "Invalid credentials." when login fails
   if (!response.data || !response.data.token) {
@@ -230,10 +246,10 @@ class ApiService {
 }
 
 
-  async register(adminData: Partial<Admin> & { password: string }): Promise<ApiResponse<{ token: string; admin: Admin }>> {
+  async register(adminData: { name: string; email: string; password: string }): Promise<ApiResponse<{ token: string; admin: User }>> {
     const response = await this.request('/register', {
       body: JSON.stringify(adminData),
-    }, ADMIN_API_BASE_URL) as ApiResponse<{ token: string; admin: Admin }>;
+    }, ADMIN_API_BASE_URL) as ApiResponse<{ token: string; admin: User }>;
 
     // Check if registration was successful
     if (!response.data || !response.data.token) {
@@ -259,15 +275,15 @@ class ApiService {
     return response;
   }
 
-// Profile (Admin Panel)
-async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
+// Profile (Admin Panel - Super Admin from User model)
+async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     return this.request('/profile', {
       method: 'POST',
       body: JSON.stringify(id ? { id } : {})
     }, ADMIN_API_BASE_URL);
   }
 
-  async updateProfile(profileData: { name?: string; email?: string; id?: string }): Promise<ApiResponse<{ admin: Admin }>> {
+  async updateProfile(profileData: { name?: string; email?: string; id?: string }): Promise<ApiResponse<{ admin: User }>> {
     return this.request('/profile/update', {
       method: 'POST',
       body: JSON.stringify(profileData)
@@ -281,15 +297,15 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, ADMIN_API_BASE_URL);
   }
 
-  // Admins
+  // Admins (Super Admins from User model)
   async getAdmins(params: PaginationParams & { role?: string; status?: string } = {}): Promise<ApiResponse> {
     return this.request('/admins', {
       body: JSON.stringify(params),
     }, ADMIN_API_BASE_URL);
   }
 
-  async createAdmin(adminData: Partial<Admin> & { password: string }): Promise<ApiResponse<{ admin: Admin }>> {
-    const response = await this.request<{ admin: Admin } | 0>('/admins/create', {
+  async createAdmin(adminData: { name: string; email: string; password: string }): Promise<ApiResponse<{ admin: User }>> {
+    const response = await this.request<{ admin: User } | 0>('/admins/create', {
       body: JSON.stringify(adminData),
     }, ADMIN_API_BASE_URL);
     
@@ -298,11 +314,11 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
       throw new Error(response.message || 'Failed to create admin');
     }
     
-    return response as ApiResponse<{ admin: Admin }>;
+    return response as ApiResponse<{ admin: User }>;
   }
 
-  async updateAdmin(adminData: Partial<Admin> & { id: string }): Promise<ApiResponse<{ admin: Admin }>> {
-    const response = await this.request<{ admin: Admin } | 0>('/admins/update', {
+  async updateAdmin(adminData: { id: string; name?: string; email?: string; isActive?: boolean }): Promise<ApiResponse<{ admin: User }>> {
+    const response = await this.request<{ admin: User } | 0>('/admins/update', {
       body: JSON.stringify(adminData),
     }, ADMIN_API_BASE_URL);
     
@@ -311,7 +327,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
       throw new Error(response.message || 'Failed to update admin');
     }
     
-    return response as ApiResponse<{ admin: Admin }>;
+    return response as ApiResponse<{ admin: User }>;
   }
 
   async deleteAdmin(id: string): Promise<ApiResponse> {
@@ -320,7 +336,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, ADMIN_API_BASE_URL);
   }
 
-  async toggleAdminStatus(id: string, isActive: boolean): Promise<ApiResponse<{ admin: Admin }>> {
+  async toggleAdminStatus(id: string, isActive: boolean): Promise<ApiResponse<{ admin: User }>> {
     return this.request('/admins/update', {
       body: JSON.stringify({ id, isActive }),
     }, ADMIN_API_BASE_URL);
@@ -390,10 +406,17 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
   }
 
   async createHospital(data: { name: string; address?: string; email: string; password: string }): Promise<ApiResponse<{ hospital: Hospital; user: User }>> {
-    return this.request('/hospitals', {
+    const response = await this.request<{ hospital: Hospital; user: User } | 0>('/hospitals', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to create hospital');
+    }
+    
+    return response as ApiResponse<{ hospital: Hospital; user: User }>;
   }
 
   async getHospitalById(id: string): Promise<ApiResponse<{ hospital: Hospital }>> {
@@ -402,25 +425,46 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async updateHospital(data: { id: string; name?: string; address?: string; isActive?: boolean }): Promise<ApiResponse<{ hospital: Hospital }>> {
-    return this.request('/hospitals/update', {
+  async updateHospital(data: { id: string; name?: string; address?: string; isActive?: boolean; email?: string; password?: string }): Promise<ApiResponse<{ hospital: Hospital }>> {
+    const response = await this.request<{ hospital: Hospital } | 0>('/hospitals/update', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to update hospital');
+    }
+    
+    return response as ApiResponse<{ hospital: Hospital }>;
   }
 
   async deleteHospital(id: string): Promise<ApiResponse> {
-    return this.request('/hospitals/delete', {
+    const response = await this.request<0>('/hospitals/delete', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to delete hospital');
+    }
+    
+    return response;
   }
 
   async toggleHospitalStatus(id: string): Promise<ApiResponse<{ hospital: Hospital }>> {
-    return this.request('/hospitals/toggle-status', {
+    const response = await this.request<{ hospital: Hospital } | 0>('/hospitals/toggle-status', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to toggle hospital status');
+    }
+    
+    return response as ApiResponse<{ hospital: Hospital }>;
   }
 
   // Clinics
@@ -432,10 +476,17 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
   }
 
   async createClinic(data: { name: string; hospitalId?: string; email?: string; password?: string }): Promise<ApiResponse<{ clinic: Clinic; user?: User }>> {
-    return this.request('/clinics', {
+    const response = await this.request<{ clinic: Clinic; user?: User } | 0>('/clinics', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to create clinic');
+    }
+    
+    return response as ApiResponse<{ clinic: Clinic; user?: User }>;
   }
 
   async getClinicById(id: string): Promise<ApiResponse<{ clinic: Clinic }>> {
@@ -444,25 +495,46 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async updateClinic(data: { id: string; name?: string; isActive?: boolean }): Promise<ApiResponse<{ clinic: Clinic }>> {
-    return this.request('/clinics/update', {
+  async updateClinic(data: { id: string; name?: string; isActive?: boolean; email?: string; password?: string }): Promise<ApiResponse<{ clinic: Clinic }>> {
+    const response = await this.request<{ clinic: Clinic } | 0>('/clinics/update', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to update clinic');
+    }
+    
+    return response as ApiResponse<{ clinic: Clinic }>;
   }
 
   async deleteClinic(id: string): Promise<ApiResponse> {
-    return this.request('/clinics/delete', {
+    const response = await this.request<0>('/clinics/delete', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to delete clinic');
+    }
+    
+    return response;
   }
 
   async toggleClinicStatus(id: string): Promise<ApiResponse<{ clinic: Clinic }>> {
-    return this.request('/clinics/toggle-status', {
+    const response = await this.request<{ clinic: Clinic } | 0>('/clinics/toggle-status', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to toggle clinic status');
+    }
+    
+    return response as ApiResponse<{ clinic: Clinic }>;
   }
 
   // Doctors
@@ -474,10 +546,17 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
   }
 
   async createDoctor(data: { name: string; email: string; password: string; clinicId?: string; hospitalId?: string }): Promise<ApiResponse<{ doctor: Doctor }>> {
-    return this.request('/doctors', {
+    const response = await this.request<{ doctor: Doctor } | 0>('/doctors', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to create doctor');
+    }
+    
+    return response as ApiResponse<{ doctor: Doctor }>;
   }
 
   async getDoctorById(id: string): Promise<ApiResponse<{ doctor: Doctor }>> {
@@ -486,25 +565,46 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async updateDoctor(data: { id: string; isActive?: boolean }): Promise<ApiResponse<{ doctor: Doctor }>> {
-    return this.request('/doctors/update', {
+  async updateDoctor(data: { id: string; isActive?: boolean; name?: string; email?: string; password?: string; clinicId?: string; hospitalId?: string }): Promise<ApiResponse<{ doctor: Doctor }>> {
+    const response = await this.request<{ doctor: Doctor } | 0>('/doctors/update', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to update doctor');
+    }
+    
+    return response as ApiResponse<{ doctor: Doctor }>;
   }
 
   async deleteDoctor(id: string): Promise<ApiResponse> {
-    return this.request('/doctors/delete', {
+    const response = await this.request<0>('/doctors/delete', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to delete doctor');
+    }
+    
+    return response;
   }
 
   async toggleDoctorStatus(id: string): Promise<ApiResponse<{ doctor: Doctor }>> {
-    return this.request('/doctors/toggle-status', {
+    const response = await this.request<{ doctor: Doctor } | 0>('/doctors/toggle-status', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to toggle doctor status');
+    }
+    
+    return response as ApiResponse<{ doctor: Doctor }>;
   }
 
   // Patients
@@ -515,11 +615,18 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async createPatient(data: { name: string; mobile: string; address?: string }): Promise<ApiResponse<{ patient: Patient }>> {
-    return this.request('/patients', {
+  async createPatient(data: { name: string; mobile: string; address?: string; doctorId?: string; clinicId?: string; hospitalId?: string }): Promise<ApiResponse<{ patient: Patient }>> {
+    const response = await this.request<{ patient: Patient } | 0>('/patients', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to create patient');
+    }
+    
+    return response as ApiResponse<{ patient: Patient }>;
   }
 
   async getPatientById(id: string): Promise<ApiResponse<{ patient: Patient }>> {
@@ -529,17 +636,31 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: Admin }>> {
   }
 
   async updatePatient(data: { id: string; name?: string; mobile?: string; address?: string }): Promise<ApiResponse<{ patient: Patient }>> {
-    return this.request('/patients/update', {
+    const response = await this.request<{ patient: Patient } | 0>('/patients/update', {
       method: 'POST',
       body: JSON.stringify(data)
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to update patient');
+    }
+    
+    return response as ApiResponse<{ patient: Patient }>;
   }
 
   async deletePatient(id: string): Promise<ApiResponse> {
-    return this.request('/patients/delete', {
+    const response = await this.request<0>('/patients/delete', {
       method: 'POST',
       body: JSON.stringify({ id })
     }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to delete patient');
+    }
+    
+    return response;
   }
 
   // Export

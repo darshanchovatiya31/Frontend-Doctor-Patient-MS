@@ -33,20 +33,17 @@ export default function RegisterForm() {
   };
 
   const validatePassword = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    // Simplified validation - minimum 6 characters (matching backend)
+    const minLength = password.length >= 6;
     
     return {
-      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
+      isValid: minLength,
       requirements: {
         minLength,
-        hasUpperCase,
-        hasLowerCase,
-        hasNumbers,
-        hasSpecialChar
+        hasUpperCase: true, // Not required but shown
+        hasLowerCase: true, // Not required but shown
+        hasNumbers: true, // Not required but shown
+        hasSpecialChar: true // Not required but shown
       }
     };
   };
@@ -83,11 +80,8 @@ export default function RegisterForm() {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else {
-      const passwordValidation = validatePassword(formData.password);
-      if (!passwordValidation.isValid) {
-        newErrors.password = 'Password does not meet requirements';
-      }
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     if (!formData.confirmPassword) {
@@ -111,9 +105,9 @@ export default function RegisterForm() {
       
       swal.success('Success', 'Registration successful! Redirecting to dashboard...');
       
-      // Navigate to dashboard after successful registration
+      // Navigate to hospital dashboard after successful registration (super admin)
       setTimeout(() => {
-        navigate('/');
+        navigate('/hospital/dashboard');
       }, 1500);
     } catch (error: any) {
       const errorMessage = error.message || 'Registration failed. Please try again.';
@@ -121,6 +115,8 @@ export default function RegisterForm() {
       // Set appropriate error messages
       if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('already exists')) {
         setErrors({ email: errorMessage, general: errorMessage });
+      } else if (errorMessage.toLowerCase().includes('super admin already exists')) {
+        setErrors({ general: 'Super admin already exists. Only one super admin account is allowed. Please sign in instead.' });
       } else {
         setErrors({ general: errorMessage });
       }
@@ -137,15 +133,20 @@ export default function RegisterForm() {
     <div className="relative z-10 flex flex-col items-center">
       <Link to="/" className="">
         <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-brand-600 flex items-center justify-center">
-          <span className="text-2xl sm:text-3xl font-bold text-white">P-MS</span>
+          <span className="text-2xl sm:text-3xl font-bold text-white">P</span>
         </div>
       </Link>
       <h1 className="mb-2 mt-2 text-2xl font-bold text-gray-800 dark:text-white text-center">
-        Create Admin Account
+        Create Super Admin Account
       </h1>
-      <p className="mb-8 text-sm text-gray-500 dark:text-gray-400 text-center">
-        Register for Patients-MS Admin Dashboard
+      <p className="mb-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+        Register for Patients-MS Super Admin Dashboard
       </p>
+      <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
+          <strong>Note:</strong> Only one super admin account can be created. If a super admin already exists, registration will be disabled.
+        </p>
+      </div>
       <form className="w-full space-y-6" onSubmit={handleSubmit}>
         {/* General Error Message */}
         {errors.general && (
@@ -231,25 +232,9 @@ export default function RegisterForm() {
                 Password Requirements:
               </p>
               <div className="space-y-1">
-                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.minLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.minLength ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  At least 8 characters
-                </div>
-                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.hasUpperCase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.hasUpperCase ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  One uppercase letter
-                </div>
-                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.hasLowerCase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.hasLowerCase ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  One lowercase letter
-                </div>
-                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.hasNumbers ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.hasNumbers ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  One number
-                </div>
-                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.hasSpecialChar ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                  One special character
+                <div className={`flex items-center gap-2 text-xs ${passwordValidation?.requirements.minLength ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${passwordValidation?.requirements.minLength ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                  At least 6 characters
                 </div>
               </div>
             </div>
@@ -292,11 +277,11 @@ export default function RegisterForm() {
         </div>
 
         <button
-          className="w-full bg-green-600 hover:bg-green-700 text-white mb-4 py-2 px-4 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-brand-600 hover:bg-brand-700 text-white mb-4 py-2.5 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           type="submit"
           disabled={loading}
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? 'Creating Account...' : 'Create Super Admin Account'}
         </button>
 
         <div className="text-center">
@@ -304,7 +289,7 @@ export default function RegisterForm() {
             Already have an account?{' '}
             <Link 
               to="/signin" 
-              className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors"
+              className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
             >
               Sign In
             </Link>

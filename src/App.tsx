@@ -1,14 +1,13 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router";
 import { lazy, Suspense } from "react";
 import SignIn from "./pages/AuthPages/SignIn";
+import Register from "./pages/AuthPages/Register";
 import NotFound from "./pages/OtherPage/NotFound";
 
-// const Register = lazy(() => import("./pages/AuthPages/Register"));
 import UserProfiles from "./pages/UserProfiles";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import Admins from "./pages/Admins";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Hospital Management Pages
@@ -58,7 +57,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   let redirectPath = '/';
   if (user) {
     const userRole = (user as any).role;
-    if (userRole === 'super_admin' || userRole === 'SUPER_ADMIN') {
+    if (userRole === 'SUPER_ADMIN') {
       redirectPath = '/hospital/dashboard';
     }
   }
@@ -72,7 +71,7 @@ function DashboardRedirect() {
   
   if (user) {
     const userRole = (user as any).role;
-    if (userRole === 'super_admin' || userRole === 'SUPER_ADMIN') {
+    if (userRole === 'SUPER_ADMIN') {
       return <Navigate to="/hospital/dashboard" replace />;
     }
   }
@@ -89,11 +88,6 @@ function AppRoutes() {
           <Route index path="/" element={
             <ProtectedRoute>
               <DashboardRedirect />
-            </ProtectedRoute>
-          } />
-          <Route path="/admins" element={
-            <ProtectedRoute>
-              <Admins />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={
@@ -148,16 +142,10 @@ function AppRoutes() {
             <SignIn />
           </PublicRoute>
         } />
-        {/* Registration route commented out - registration disabled */}
+        {/* Super Admin Registration Route - Commented out after initial setup */}
         {/* <Route path="/register" element={
           <PublicRoute>
-            <Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
-              </div>
-            }>
-              <Register />
-            </Suspense>
+            <Register />
           </PublicRoute>
         } /> */}
 

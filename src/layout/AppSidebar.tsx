@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { LayoutDashboard, Shield, UserCircle, LogOut, Building2, Stethoscope, Users, ChevronDown, MoreVertical } from 'lucide-react';
+import { LayoutDashboard, UserCircle, LogOut, Building2, Stethoscope, Users, ChevronDown, MoreVertical } from 'lucide-react';
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
 import swal from '../utils/swalHelper';
@@ -25,22 +25,12 @@ const getNavItems = (handleLogout: () => void, userRole?: string): NavItem[] => 
     {
       icon: <LayoutDashboard />,
       name: "Dashboard",
-      path: userRole && ['SUPER_ADMIN', 'super_admin', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole) ? "/hospital/dashboard" : "/",
+      path: userRole && ['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole) ? "/hospital/dashboard" : "/",
     },
   ];
 
-  // Admin panel items (for admin role)
-  if (!userRole || userRole === 'admin' || userRole === 'super_admin') {
-    items.push({
-      icon: <Shield />,
-      name: "Admins",
-      path: "/admins",
-    });
-  }
-
   // Hospital Management items based on role
-  // super_admin (from Admin model) should have same access as SUPER_ADMIN (from User model)
-  if (userRole === 'SUPER_ADMIN' || userRole === 'super_admin') {
+  if (userRole === 'SUPER_ADMIN') {
     items.push(
       {
         icon: <Building2 />,

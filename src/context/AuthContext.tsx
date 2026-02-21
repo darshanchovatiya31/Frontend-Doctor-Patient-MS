@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Admin, User } from '../services/api';
+import { User } from '../services/api';
 import apiService from '../services/api';
 
 interface AuthContextType {
-  user: Admin | User | null;
+  user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (adminData: { name: string; email: string; password: string }) => Promise<void>;
@@ -27,7 +27,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<Admin | User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +39,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (storedToken && storedUser) {
         try {
           const userData = JSON.parse(storedUser);
+          // Ensure token is set in apiService
+          apiService.token = storedToken;
           setToken(storedToken);
           setUser(userData);
         } catch (error) {
@@ -79,12 +81,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Hospital login failed, trying admin login...');
       }
       
-      // Try admin login
+      // Try admin login (super admin from User model)
       const response = await apiService.login(email, password);
       
       if (response.data && response.data.token && response.data.admin) {
         const token = response.data.token;
         const userData = response.data.admin;
+        
+        // Set token in apiService
+        apiService.setToken(token);
         
         // Set state
         setToken(token);
@@ -124,6 +129,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.data && response.data.token && response.data.admin) {
         const token = response.data.token;
         const userData = response.data.admin;
+        
+        // Set token in apiService
+        apiService.setToken(token);
         
         // Set state
         setToken(token);

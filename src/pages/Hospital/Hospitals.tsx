@@ -24,7 +24,7 @@ export default function HospitalsPage() {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
-        if (userData.role !== 'SUPER_ADMIN' && userData.role !== 'super_admin') {
+        if (userData.role !== 'SUPER_ADMIN') {
           navigate('/');
         }
       } catch (e) {
@@ -70,43 +70,82 @@ export default function HospitalsPage() {
     setShowModal(true);
   };
 
-  const handleEdit = (hospital: Hospital) => {
-    setEditingHospital(hospital);
-    setFormData({ name: hospital.name, address: hospital.address || '', email: '', password: '' });
-    setShowModal(true);
+  const handleEdit = async (hospital: Hospital) => {
+    try {
+      // Fetch hospital details to get user email
+      const response = await apiService.getHospitalById(hospital._id);
+      if (response.status === 200 && response.data?.hospital) {
+        const hospitalData = response.data.hospital;
+        setEditingHospital(hospitalData);
+        setFormData({ 
+          name: hospitalData.name, 
+          address: hospitalData.address || '', 
+          email: hospitalData.userEmail || '', 
+          password: '' 
+        });
+        setShowModal(true);
+      } else {
+        // Fallback to existing data
+        setEditingHospital(hospital);
+        setFormData({ 
+          name: hospital.name, 
+          address: hospital.address || '', 
+          email: hospital.userEmail || '', 
+          password: '' 
+        });
+        setShowModal(true);
+      }
+    } catch (error: any) {
+      console.error('Error fetching hospital details:', error);
+      // Fallback to existing data
+      setEditingHospital(hospital);
+      setFormData({ 
+        name: hospital.name, 
+        address: hospital.address || '', 
+        email: hospital.userEmail || '', 
+        password: '' 
+      });
+      setShowModal(true);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingHospital) {
-        const response = await apiService.updateHospital({
+        const updateData: any = {
           id: editingHospital._id,
           name: formData.name,
           address: formData.address,
-        });
-        if (response.status === 200) {
-          swal.success('Success', 'Hospital updated successfully');
-          setShowModal(false);
-          fetchHospitals();
-        } else {
-          throw new Error(response.message || 'Failed to update hospital');
+        };
+        
+        // Add email if provided
+        if (formData.email && formData.email.trim()) {
+          updateData.email = formData.email.trim();
         }
+        
+        // Add password if provided
+        if (formData.password && formData.password.trim()) {
+          updateData.password = formData.password.trim();
+        }
+        
+        await apiService.updateHospital(updateData);
+        swal.success('Success', 'Hospital updated successfully');
+        setShowModal(false);
+        setEditingHospital(null);
+        setFormData({ name: '', address: '', email: '', password: '' });
+        fetchHospitals();
       } else {
-        const response = await apiService.createHospital({
+        await apiService.createHospital({
           name: formData.name,
           address: formData.address,
           email: formData.email,
           password: formData.password,
         });
-        if (response.status === 200) {
-          swal.success('Success', 'Hospital created successfully');
-          setShowModal(false);
-          setFormData({ name: '', address: '', email: '', password: '' });
-          fetchHospitals();
-        } else {
-          throw new Error(response.message || 'Failed to create hospital');
-        }
+        swal.success('Success', 'Hospital created successfully');
+        setShowModal(false);
+        setFormData({ name: '', address: '', email: '', password: '' });
+        fetchHospitals();
       }
     } catch (error: any) {
       swal.error('Error', error.message || 'Operation failed');
@@ -117,13 +156,9 @@ export default function HospitalsPage() {
     try {
       const result = await swal.confirm('Delete Hospital', 'Are you sure you want to delete this hospital?', 'warning');
       if (result.isConfirmed) {
-        const response = await apiService.deleteHospital(id);
-        if (response.status === 200) {
-          swal.success('Success', 'Hospital deleted successfully');
-          fetchHospitals();
-        } else {
-          throw new Error(response.message || 'Failed to delete hospital');
-        }
+        await apiService.deleteHospital(id);
+        swal.success('Success', 'Hospital deleted successfully');
+        fetchHospitals();
       }
     } catch (error: any) {
       swal.error('Error', error.message || 'Failed to delete hospital');
@@ -132,19 +167,15 @@ export default function HospitalsPage() {
 
   const handleToggleStatus = async (id: string) => {
     try {
-      const response = await apiService.toggleHospitalStatus(id);
-      if (response.status === 200) {
-        swal.success('Success', 'Hospital status updated successfully');
-        fetchHospitals();
-      } else {
-        throw new Error(response.message || 'Failed to update status');
-      }
+      await apiService.toggleHospitalStatus(id);
+      swal.success('Success', 'Hospital status updated successfully');
+      fetchHospitals();
     } catch (error: any) {
       swal.error('Error', error.message || 'Failed to update status');
     }
   };
 
-  if (user?.role !== 'SUPER_ADMIN' && user?.role !== 'super_admin') {
+  if (user?.role !== 'SUPER_ADMIN') {
     return null;
   }
 
@@ -157,7 +188,7 @@ export default function HospitalsPage() {
         </div>
         <button
           onClick={handleCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           <Plus className="h-4 w-4" />
           Add Hospital
@@ -174,12 +205,12 @@ export default function HospitalsPage() {
               placeholder="Search hospitals..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
             Search
           </button>
@@ -190,49 +221,134 @@ export default function HospitalsPage() {
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
           </div>
         ) : hospitals.length > 0 ? (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-3 p-3 sm:p-4">
+              {hospitals.map((hospital) => (
+                <div
+                  key={hospital._id}
+                  className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {hospital.name}
+                        </h3>
+                        <button
+                          onClick={() => handleToggleStatus(hospital._id)}
+                          className="flex-shrink-0"
+                        >
+                          {hospital.isActive ? (
+                            <ToggleRight className="h-5 w-5 text-brand-600" />
+                          ) : (
+                            <ToggleLeft className="h-5 w-5 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
+                      {hospital.userEmail && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 truncate">
+                          {hospital.userEmail}
+                        </p>
+                      )}
+                      <div className="space-y-1.5 text-xs">
+                        {(hospital.hasPassword !== false) && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Password:</span>
+                            <span className="font-mono text-gray-700 dark:text-gray-300">••••••••</span>
+                          </div>
+                        )}
+                        {hospital.address && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Address:</span>
+                            <span className="text-gray-700 dark:text-gray-300 flex-1">{hospital.address}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Created:</span>
+                          <span className="text-gray-700 dark:text-gray-300">
+                            {new Date(hospital.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0 ml-3">
+                      <button
+                        onClick={() => handleEdit(hospital)}
+                        className="text-brand-600 hover:text-brand-900 dark:text-brand-400 p-2"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(hospital._id)}
+                        className="text-red-600 hover:text-red-900 dark:text-red-400 p-2"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Created At</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Actions</th>
+                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Name</th>
+                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Password</th>
+                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Address</th>
+                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Status</th>
+                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Created At</th>
+                    <th className="px-4 xl:px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                   {hospitals.map((hospital) => (
                     <tr key={hospital._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{hospital.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{hospital.address || '-'}</td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm">
+                      <td className="px-4 xl:px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{hospital.name}</div>
+                        {hospital.userEmail && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{hospital.userEmail}</div>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {(hospital.hasPassword !== false) ? (
+                          <span className="font-mono">••••••••</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{hospital.address || '-'}</td>
+                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm">
                         <button
                           onClick={() => handleToggleStatus(hospital._id)}
                           className="flex items-center gap-2"
                         >
                           {hospital.isActive ? (
-                            <ToggleRight className="h-6 w-6 text-green-600" />
+                            <ToggleRight className="h-6 w-6 text-brand-600" />
                           ) : (
                             <ToggleLeft className="h-6 w-6 text-gray-400" />
                           )}
-                          <span className={hospital.isActive ? 'text-green-600' : 'text-gray-400'}>
+                          <span className={hospital.isActive ? 'text-brand-600' : 'text-gray-400'}>
                             {hospital.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </button>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {new Date(hospital.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => handleEdit(hospital)}
-                            className="text-green-600 hover:text-green-900 dark:text-green-400"
+                            className="text-brand-600 hover:text-brand-900 dark:text-brand-400"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
@@ -295,7 +411,7 @@ export default function HospitalsPage() {
                               onClick={() => setCurrentPage(page)}
                               className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
                                 currentPage === page
-                                  ? 'z-10 bg-green-600 text-white focus:z-20'
+                                  ? 'z-10 bg-brand-600 text-white focus:z-20'
                                   : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:text-white dark:ring-gray-600'
                               }`}
                             >
@@ -329,80 +445,117 @@ export default function HospitalsPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">
-              {editingHospital ? 'Edit Hospital' : 'Create Hospital'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name <span className="text-red-500">*</span>
-                </label>
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6"
+          onClick={() => setShowModal(false)}
+        >
+          {/* Backdrop with blur */}
+          <div 
+            className="absolute inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setShowModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div 
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all duration-300 scale-100 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 sm:px-6 sm:py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                {editingHospital ? 'Edit Hospital' : 'Create Hospital'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label="Close modal"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-6 sm:py-5">
+              <form id="hospital-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Name <span className="text-red-500">*</span>
+                  </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Address
-                </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Address
+                  </label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
                 />
               </div>
-              {!editingHospital && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Password <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                </>
-              )}
-              <div className="flex gap-2 justify-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email {!editingHospital && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                  type="email"
+                  required={!editingHospital}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+                  placeholder={editingHospital ? "Leave blank to keep current email" : ""}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Password {!editingHospital && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                  type="password"
+                  required={!editingHospital}
+                  minLength={6}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+                  placeholder={editingHospital ? "Leave blank to keep current password" : ""}
+                />
+                {editingHospital && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Leave blank to keep current password
+                  </p>
+                )}
+              </div>
+              </form>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 sm:px-6 sm:py-5 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl flex-shrink-0">
+              <div className="flex gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300"
+                  className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                  form="hospital-form"
+                  className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors shadow-sm hover:shadow-md"
                 >
                   {editingHospital ? 'Update' : 'Create'}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
