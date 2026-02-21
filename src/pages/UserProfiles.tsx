@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, UserCircle, Mail, Lock, Calendar, User } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Calendar, User } from "lucide-react";
 import swal from '../utils/swalHelper';
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
@@ -227,23 +227,34 @@ export default function UserProfiles() {
     }
   };
 
+  // Get user initials from name
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20">
-            <UserCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-white font-semibold text-xl">
+            {getInitials(userProfile.name || '')}
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {userProfile.name || 'Admin Profile'}
             </h1>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-brand-600/10 text-brand-600 dark:bg-brand-600/20 dark:text-brand-400">
                 {userProfile.role}
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+              <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
                 Member since {userProfile.joinDate ? new Date(userProfile.joinDate).toLocaleDateString() : 'N/A'}
               </span>
@@ -255,10 +266,10 @@ export default function UserProfiles() {
       {/* Main Content - Side by Side Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Update Profile Section */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-              <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600/10 dark:bg-brand-600/20">
+              <User className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             </div>
             <div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -334,8 +345,8 @@ export default function UserProfiles() {
                 disabled={isLoading.profile}
                 className={`w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
                   ${isLoading.profile 
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed" 
-                    : "bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md"
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400" 
+                    : "bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow-md"
                   }`}
               >
                 {isLoading.profile ? (
@@ -355,10 +366,10 @@ export default function UserProfiles() {
         </div>
 
         {/* Change Password Section */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 p-6">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/20">
-              <Lock className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600/10 dark:bg-brand-600/20">
+              <Lock className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             </div>
             <div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -463,24 +474,24 @@ export default function UserProfiles() {
                     Password Requirements:
                   </h4>
                   <div className="grid grid-cols-1 gap-2">
-                    <div className={`flex items-center gap-2 text-sm ${passwordForm.newPassword.length >= 8 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${passwordForm.newPassword.length >= 8 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`flex items-center gap-2 text-sm ${passwordForm.newPassword.length >= 8 ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${passwordForm.newPassword.length >= 8 ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                       At least 8 characters
                     </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[A-Z]/.test(passwordForm.newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[A-Z]/.test(passwordForm.newPassword) ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`flex items-center gap-2 text-sm ${/[A-Z]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${/[A-Z]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                       One uppercase letter
                     </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[a-z]/.test(passwordForm.newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[a-z]/.test(passwordForm.newPassword) ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`flex items-center gap-2 text-sm ${/[a-z]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${/[a-z]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                       One lowercase letter
                     </div>
-                    <div className={`flex items-center gap-2 text-sm ${/\d/.test(passwordForm.newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/\d/.test(passwordForm.newPassword) ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`flex items-center gap-2 text-sm ${/\d/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${/\d/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                       One number
                     </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    <div className={`flex items-center gap-2 text-sm ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                       One special character
                     </div>
                   </div>
@@ -500,8 +511,8 @@ export default function UserProfiles() {
                 disabled={isLoading.password}
                 className={`w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
                   ${isLoading.password
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md"
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+                    : "bg-brand-600 hover:bg-brand-700 text-white shadow-sm hover:shadow-md"
                   }`}
               >
                 {isLoading.password ? (

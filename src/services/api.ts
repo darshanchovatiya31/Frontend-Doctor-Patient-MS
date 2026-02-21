@@ -406,7 +406,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
   }
 
   // Hospitals
-  async getHospitals(params: PaginationParams & { isActive?: string } = {}): Promise<ApiResponse> {
+  async getHospitals(params: PaginationParams & { isActive?: string | boolean } = {}): Promise<ApiResponse> {
     return this.request('/hospitals/list', {
       method: 'POST',
       body: JSON.stringify(params)

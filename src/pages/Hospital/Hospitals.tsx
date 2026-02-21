@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import apiService, { Hospital } from "../../services/api";
 import swal from '../../utils/swalHelper';
-import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ToggleLeft, ToggleRight, Filter, ChevronDown } from 'lucide-react';
 import { TableSkeleton } from '../../components/common/Skeleton';
 
 export default function HospitalsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDocs, setTotalDocs] = useState(0);
@@ -33,16 +35,23 @@ export default function HospitalsPage() {
       }
     }
     fetchHospitals();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, statusFilter]);
 
   const fetchHospitals = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getHospitals({
+      const params: any = {
         page: currentPage,
         limit,
         search: searchTerm || undefined,
-      });
+      };
+      
+      // Add status filter for backend - send 'active' or 'inactive' string, or omit for 'all'
+      if (statusFilter !== 'all') {
+        params.isActive = statusFilter; // Send 'active' or 'inactive' as string
+      }
+      
+      const response = await apiService.getHospitals(params);
 
       if (response.status === 200 && response.data) {
         setHospitals(response.data.docs || []);
@@ -182,112 +191,176 @@ export default function HospitalsPage() {
 
   return (
     <>
-      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Hospitals</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage all hospitals</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Hospitals</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and monitor all hospitals</p>
+          </div>
+          <button
+            onClick={handleCreate}
+            className="flex-shrink-0 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 shadow-sm hover:shadow transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add </span><span className="hidden sm:inline">Hospital</span>
+          </button>
         </div>
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Hospital
-        </button>
       </div>
 
       {/* Search */}
       <div className="mb-6">
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Search hospitals..."
+              placeholder="Search by name, email, or address..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all"
             />
           </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            Search
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+            >
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline">
+                {statusFilter === 'all' ? 'All Status' : statusFilter === 'active' ? 'Active' : 'Inactive'}
+              </span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            
+            {showFilterDropdown && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowFilterDropdown(false)}
+                />
+                <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-20">
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setShowFilterDropdown(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${
+                        statusFilter === 'all'
+                          ? 'bg-brand-600/10 text-brand-600 dark:bg-brand-600/20'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      All Status
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter('active');
+                        setShowFilterDropdown(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${
+                        statusFilter === 'active'
+                          ? 'bg-brand-600/10 text-brand-600 dark:bg-brand-600/20'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      Active
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter('inactive');
+                        setShowFilterDropdown(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${
+                        statusFilter === 'inactive'
+                          ? 'bg-brand-600/10 text-brand-600 dark:bg-brand-600/20'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      Inactive
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </form>
       </div>
 
       {/* Hospitals Table */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
         {loading ? (
           <TableSkeleton rows={5} columns={6} />
         ) : hospitals.length > 0 ? (
           <>
             {/* Mobile Card View */}
-            <div className="lg:hidden space-y-3 p-3 sm:p-4">
+            <div className="lg:hidden p-3 space-y-3">
               {hospitals.map((hospital) => (
                 <div
                   key={hospital._id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3"
                 >
+                  {/* Header Row */}
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {hospital.name}
-                        </h3>
-                        <button
-                          onClick={() => handleToggleStatus(hospital._id)}
-                          className="flex-shrink-0"
-                        >
-                          {hospital.isActive ? (
-                            <ToggleRight className="h-5 w-5 text-brand-600" />
-                          ) : (
-                            <ToggleLeft className="h-5 w-5 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                        {hospital.name}
+                      </h3>
                       {hospital.userEmail && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 truncate">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                           {hospital.userEmail}
                         </p>
                       )}
-                      <div className="space-y-1.5 text-xs">
-                        {(hospital.hasPassword !== false) && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Password:</span>
-                            <span className="font-mono text-gray-700 dark:text-gray-300">••••••••</span>
-                          </div>
-                        )}
-                        {hospital.address && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Address:</span>
-                            <span className="text-gray-700 dark:text-gray-300 flex-1">{hospital.address}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500 dark:text-gray-400 min-w-[60px]">Created:</span>
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {new Date(hospital.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
                     </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0 ml-3">
+                    <button
+                      onClick={() => handleToggleStatus(hospital._id)}
+                      className={`flex-shrink-0 ml-3 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                        hospital.isActive
+                          ? 'bg-brand-600/10 text-brand-600 dark:bg-brand-600/20'
+                          : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                      }`}
+                    >
+                      {hospital.isActive ? 'Active' : 'Inactive'}
+                    </button>
+                  </div>
+
+                  {/* Details */}
+                  {hospital.address && (
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                        {hospital.address}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Footer Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {new Date(hospital.createdAt).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}
+                    </span>
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(hospital)}
-                        className="text-brand-600 hover:text-brand-900 dark:text-brand-400 p-2"
-                        title="Edit"
+                            className="px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-md transition-colors"
                       >
-                        <Edit className="h-4 w-4" />
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDelete(hospital._id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 p-2"
-                        title="Delete"
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -298,62 +371,89 @@ export default function HospitalsPage() {
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Name</th>
-                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Password</th>
-                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Address</th>
-                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Status</th>
-                    <th className="px-4 xl:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Created At</th>
-                    <th className="px-4 xl:px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-300">Actions</th>
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Hospital Name
+                    </th>
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Address
+                    </th>
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
                   {hospitals.map((hospital) => (
-                    <tr key={hospital._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="px-4 xl:px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{hospital.name}</div>
+                    <tr 
+                      key={hospital._id} 
+                      className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {hospital.name}
+                        </div>
                         {hospital.userEmail && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{hospital.userEmail}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {hospital.userEmail}
+                          </div>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {(hospital.hasPassword !== false) ? (
-                          <span className="font-mono">••••••••</span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                          {hospital.address || (
+                            <span className="text-gray-400 dark:text-gray-600">-</span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{hospital.address || '-'}</td>
-                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm">
+                      <td className="px-6 py-4">
                         <button
                           onClick={() => handleToggleStatus(hospital._id)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 group"
                         >
                           {hospital.isActive ? (
-                            <ToggleRight className="h-6 w-6 text-brand-600" />
+                            <ToggleRight className="h-5 w-5 text-brand-600 group-hover:opacity-80 transition-opacity" />
                           ) : (
-                            <ToggleLeft className="h-6 w-6 text-gray-400" />
+                            <ToggleLeft className="h-5 w-5 text-gray-400 group-hover:opacity-80 transition-opacity" />
                           )}
-                          <span className={hospital.isActive ? 'text-brand-600' : 'text-gray-400'}>
+                          <span className={`text-sm font-medium ${
+                            hospital.isActive 
+                              ? 'text-brand-600 dark:text-brand-600' 
+                              : 'text-gray-500 dark:text-gray-500'
+                          }`}>
                             {hospital.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </button>
                       </td>
-                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(hospital.createdAt).toLocaleDateString()}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {new Date(hospital.createdAt).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}
+                        </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 xl:px-6 py-4 text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-1">
                           <button
                             onClick={() => handleEdit(hospital)}
-                            className="text-brand-600 hover:text-brand-900 dark:text-brand-400"
+                            className="p-2 text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-lg transition-colors"
+                            title="Edit"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(hospital._id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400"
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -367,40 +467,22 @@ export default function HospitalsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:px-6">
-                <div className="flex flex-1 justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      Showing <span className="font-medium">{(currentPage - 1) * limit + 1}</span> to{' '}
-                      <span className="font-medium">{Math.min(currentPage * limit, totalDocs)}</span> of{' '}
-                      <span className="font-medium">{totalDocs}</span> results
-                    </p>
+              <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 px-4 py-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Showing <span className="font-medium text-gray-900 dark:text-white">{(currentPage - 1) * limit + 1}</span> to{' '}
+                    <span className="font-medium text-gray-900 dark:text-white">{Math.min(currentPage * limit, totalDocs)}</span> of{' '}
+                    <span className="font-medium text-gray-900 dark:text-white">{totalDocs}</span> hospitals
                   </div>
-                  <div>
-                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 dark:ring-gray-600"
-                      >
-                        Previous
-                      </button>
+                  <nav className="flex items-center gap-1" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
                       {[...Array(totalPages)].map((_, i) => {
                         const page = i + 1;
                         if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
@@ -408,36 +490,46 @@ export default function HospitalsPage() {
                             <button
                               key={page}
                               onClick={() => setCurrentPage(page)}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 currentPage === page
-                                  ? 'z-10 bg-brand-600 text-white focus:z-20'
-                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:text-white dark:ring-gray-600'
+                                  ? 'bg-brand-600 text-white'
+                                  : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                               }`}
                             >
                               {page}
                             </button>
                           );
                         } else if (page === currentPage - 2 || page === currentPage + 2) {
-                          return <span key={page} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300">...</span>;
+                          return (
+                            <span key={page} className="px-2 text-sm text-gray-500 dark:text-gray-500">
+                              ...
+                            </span>
+                          );
                         }
                         return null;
                       })}
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 dark:ring-gray-600"
-                      >
-                        Next
-                      </button>
-                    </nav>
-                  </div>
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </nav>
                 </div>
               </div>
             )}
           </>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">No hospitals found</p>
+          <div className="text-center py-16">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-gray-400 dark:text-gray-600" />
+            </div>
+            <p className="text-base font-medium text-gray-900 dark:text-white mb-1">No hospitals found</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {searchTerm ? 'Try adjusting your search criteria' : 'Get started by creating a new hospital'}
+            </p>
           </div>
         )}
       </div>

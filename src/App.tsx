@@ -13,7 +13,6 @@ import HospitalsPage from "./pages/Hospital/Hospitals";
 import ClinicsPage from "./pages/Hospital/Clinics";
 import DoctorsPage from "./pages/Hospital/Doctors";
 import PatientsPage from "./pages/Hospital/Patients";
-import PatientForm from "./pages/Hospital/PatientForm";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -125,16 +124,6 @@ function AppRoutes() {
           <Route path="/hospital/patients" element={
             <ProtectedRoute>
               <PatientsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/hospital/patients/create" element={
-            <ProtectedRoute>
-              <PatientForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/hospital/patients/:id/edit" element={
-            <ProtectedRoute>
-              <PatientForm />
             </ProtectedRoute>
           } />
         </Route>
