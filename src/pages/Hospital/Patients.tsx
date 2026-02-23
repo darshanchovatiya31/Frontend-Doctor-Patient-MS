@@ -366,184 +366,197 @@ export default function PatientsPage() {
           <>
             {/* Mobile Card View */}
             <div className="lg:hidden p-3 space-y-3">
-              {patients.map((patient) => (
-                <div
-                  key={patient._id}
-                  className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3"
-                >
-                  {/* Header Row */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                        {patient.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {patient.mobile}
-                      </p>
+              {patients.map((patient: any) => {
+                const hospitalName = typeof patient.hospitalId === 'object' ? patient.hospitalId?.name : 'N/A';
+                const clinicName = typeof patient.clinicId === 'object' ? patient.clinicId?.name : 'N/A';
+                const doctorName = typeof patient.doctorId === 'object' ? patient.doctorId?.name : 'N/A';
+                
+                return (
+                  <div
+                    key={patient._id}
+                    className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
+                  >
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between gap-2 mb-2.5">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-0.5">
+                          {patient.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {patient.mobile}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                          {new Date(patient.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(patient.createdAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Details */}
-                  {(patient.address || (typeof patient.doctorId === 'object' && patient.doctorId?.name) || (typeof patient.clinicId === 'object' && patient.clinicId?.name)) && (
-                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-2">
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                      {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
+                        <div className="flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Hospital:</span>
+                          <span className="text-gray-700 dark:text-gray-300 truncate">{hospitalName}</span>
+                        </div>
+                      )}
+                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
+                        <div className="flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Clinic:</span>
+                          <span className="text-gray-700 dark:text-gray-300 truncate">{clinicName}</span>
+                        </div>
+                      )}
+                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
+                        <div className="flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Doctor:</span>
+                          <span className="text-gray-700 dark:text-gray-300 truncate">{doctorName}</span>
+                        </div>
+                      )}
                       {patient.address && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                          {patient.address}
-                        </p>
-                      )}
-                      {(typeof patient.doctorId === 'object' && patient.doctorId?.name) && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          <span className="text-gray-500 dark:text-gray-400">Doctor: </span>
-                          {patient.doctorId.name}
-                        </p>
-                      )}
-                      {(typeof patient.clinicId === 'object' && patient.clinicId?.name) && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          <span className="text-gray-500 dark:text-gray-400">Clinic: </span>
-                          {patient.clinicId.name}
-                        </p>
+                        <div className="col-span-2 flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Address:</span>
+                          <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.address}</span>
+                        </div>
                       )}
                     </div>
-                  )}
 
-                  {/* Footer Actions */}
-                  {canManage && (
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(patient.createdAt).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </span>
-                      <div className="flex items-center gap-2">
+                    {/* Actions */}
+                    {canManage && (
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <button
                           onClick={() => handleEdit(patient)}
-                          className="px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-md transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-md transition-colors"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(patient._id)}
-                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                         >
                           Delete
                         </button>
                       </div>
-                    </div>
-                  )}
-                  {!canManage && (
-                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(patient.createdAt).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Patient Name
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Address
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Doctor
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Clinic
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Created
-                    </th>
+                <thead className="bg-gray-50 dark:bg-gray-800/50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                    {userRole === 'SUPER_ADMIN' && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hospital</th>
+                    )}
+                    {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Clinic</th>
+                    )}
+                    {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Doctor</th>
+                    )}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
                     {canManage && (
-                      <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
-                  {patients.map((patient) => (
-                    <tr 
-                      key={patient._id} 
-                      className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {patient.name}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {patient.mobile}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {patient.address || (
-                            <span className="text-gray-400 dark:text-gray-600">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {typeof patient.doctorId === 'object' && patient.doctorId?.name
-                            ? patient.doctorId.name
-                            : (
-                              <span className="text-gray-400 dark:text-gray-600">-</span>
-                            )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {typeof patient.clinicId === 'object' && patient.clinicId?.name
-                            ? patient.clinicId.name
-                            : (
-                              <span className="text-gray-400 dark:text-gray-600">-</span>
-                            )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {new Date(patient.createdAt).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                          })}
-                        </div>
-                      </td>
-                      {canManage && (
-                        <td className="px-6 py-4">
-                          <div className="flex justify-end gap-1">
-                            <button
-                              onClick={() => handleEdit(patient)}
-                              className="p-2 text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(patient._id)}
-                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                <tbody className="bg-white dark:bg-white/[0.03] divide-y divide-gray-200 dark:divide-gray-800">
+                  {patients.map((patient: any) => {
+                    const hospitalName = typeof patient.hospitalId === 'object' ? patient.hospitalId?.name : 'N/A';
+                    const clinicName = typeof patient.clinicId === 'object' ? patient.clinicId?.name : 'N/A';
+                    const doctorName = typeof patient.doctorId === 'object' ? patient.doctorId?.name : 'N/A';
+                    
+                    return (
+                      <tr 
+                        key={patient._id} 
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {patient.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {patient.mobile}
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        {userRole === 'SUPER_ADMIN' && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700 dark:text-gray-300">
+                              {hospitalName !== 'N/A' ? hospitalName : '-'}
+                            </div>
+                          </td>
+                        )}
+                        {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700 dark:text-gray-300">
+                              {clinicName !== 'N/A' ? clinicName : '-'}
+                            </div>
+                          </td>
+                        )}
+                        {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700 dark:text-gray-300">
+                              {doctorName !== 'N/A' ? doctorName : '-'}
+                            </div>
+                          </td>
+                        )}
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                            {patient.address || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {new Date(patient.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(patient.createdAt).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </td>
+                        {canManage && (
+                          <td className="px-6 py-4">
+                            <div className="flex justify-end gap-1">
+                              <button
+                                onClick={() => handleEdit(patient)}
+                                className="p-2 text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(patient._id)}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

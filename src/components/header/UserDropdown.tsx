@@ -54,7 +54,7 @@ export default function UserDropdown() {
           {user ? `${user.name.split(" ").map(n => n[0]).join("").toUpperCase()}` : "DC"}
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">{user?.name || "Darshan Chovatiya"}</span>
+        <span className="hidden lg:block mr-1 font-medium text-theme-sm">{user?.name || "Darshan Chovatiya"}</span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""

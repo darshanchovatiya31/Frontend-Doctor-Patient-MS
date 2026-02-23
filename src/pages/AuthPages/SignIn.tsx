@@ -7,7 +7,7 @@ export default function SignIn() {
     <>
       <PageMeta
         title="Patients-MS Sign In | Professional Dashboard"
-        description="Sign in to the Patients-MS Admin Panel for secure access to healthcare management tools."
+        description="Sign in to the Patients-MS Dashboard for secure access to healthcare management tools."
       />
       <AuthLayout>
         <SignInForm />

@@ -106,7 +106,7 @@ export default function SignInForm() {
         Welcome to Patients-MS
       </h1>
       <p className="mb-8 text-sm text-gray-500 dark:text-gray-400 text-center">
-        Securely access your admin dashboard
+        Securely access your dashboard
       </p>
       <form className="w-full space-y-6" onSubmit={handleSubmit}>
         {/* General Error Message */}

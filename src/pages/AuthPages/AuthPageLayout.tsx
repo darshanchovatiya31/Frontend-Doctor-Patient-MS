@@ -1,6 +1,6 @@
 import React from "react";
 import GridShape from "../../components/common/GridShape";
-import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
+// import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 export default function AuthLayout({
   children,
@@ -16,9 +16,9 @@ export default function AuthLayout({
         </div>
         {children}
       </div>
-      <div className="fixed z-50 bottom-6 right-6">
+      {/* <div className="fixed z-50 bottom-6 right-6">
         <ThemeTogglerTwo />
-      </div>
+      </div> */}
     </div>
   );
 }
