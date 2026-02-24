@@ -25,7 +25,7 @@ const getNavItems = (handleLogout: () => void, userRole?: string): NavItem[] => 
     {
       icon: <LayoutDashboard />,
       name: "Dashboard",
-      path: userRole && ['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole) ? "/hospital/dashboard" : "/",
+      path: userRole && ['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR'].includes(userRole) ? "/hospital/dashboard" : "/",
     },
   ];
 
@@ -60,19 +60,6 @@ const getNavItems = (handleLogout: () => void, userRole?: string): NavItem[] => 
         name: "Clinics",
         path: "/hospital/clinics",
       },
-      {
-        icon: <Stethoscope />,
-        name: "Doctors",
-        path: "/hospital/doctors",
-      },
-      {
-        icon: <Users />,
-        name: "Patients",
-        path: "/hospital/patients",
-      }
-    );
-  } else if (userRole === 'CLINIC') {
-    items.push(
       {
         icon: <Stethoscope />,
         name: "Doctors",

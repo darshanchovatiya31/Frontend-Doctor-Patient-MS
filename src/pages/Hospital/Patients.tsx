@@ -15,7 +15,7 @@ export default function PatientsPage() {
   const [user, setUser] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
+  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -191,7 +191,7 @@ export default function PatientsPage() {
 
   const handleCreate = () => {
     setEditingPatient(null);
-    setFormData({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
+    setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
     setShowModal(true);
   };
 
@@ -206,6 +206,8 @@ export default function PatientsPage() {
           name: patientData.name,
           mobile: patientData.mobile,
           address: patientData.address || '',
+          diagnosis: patientData.diagnosis || '',
+          treatment: patientData.treatment || '',
           doctorId: typeof patientData.doctorId === 'object' ? patientData.doctorId._id : patientData.doctorId || '',
           clinicId: typeof patientData.clinicId === 'object' ? patientData.clinicId._id : patientData.clinicId || '',
           hospitalId: typeof patientData.hospitalId === 'object' ? patientData.hospitalId._id : patientData.hospitalId || '',
@@ -239,17 +241,21 @@ export default function PatientsPage() {
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
+          diagnosis: formData.diagnosis,
+          treatment: formData.treatment,
         });
         swal.success('Success', 'Patient updated successfully');
         setShowModal(false);
         setEditingPatient(null);
-        setFormData({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
+        setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
         fetchPatients();
       } else {
         const createData: any = {
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
+          diagnosis: formData.diagnosis,
+          treatment: formData.treatment,
         };
 
         // Add doctorId if provided (for super admin, hospital, clinic)
@@ -266,7 +272,7 @@ export default function PatientsPage() {
         await apiService.createPatient(createData);
         swal.success('Success', 'Patient created successfully');
         setShowModal(false);
-        setFormData({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
+        setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
         fetchPatients();
       }
     } catch (error: any) {
@@ -328,7 +334,7 @@ export default function PatientsPage() {
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Search by name, mobile, or address..."
+              placeholder="Search by name, mobile, address, diagnosis, or treatment..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all"
@@ -428,6 +434,18 @@ export default function PatientsPage() {
                           <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.address}</span>
                         </div>
                       )}
+                      {patient.diagnosis && (
+                        <div className="col-span-2 flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Diagnosis:</span>
+                          <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.diagnosis}</span>
+                        </div>
+                      )}
+                      {patient.treatment && (
+                        <div className="col-span-2 flex items-start gap-1.5">
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Treatment:</span>
+                          <span className="text-gray-700 dark:text-gray-300 line-clamp-3">{patient.treatment}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
@@ -458,16 +476,12 @@ export default function PatientsPage() {
                 <thead className="bg-gray-50 dark:bg-gray-800/50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
-                    {userRole === 'SUPER_ADMIN' && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hospital</th>
-                    )}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Clinic</th>
-                    )}
-                    {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Doctor</th>
+                    {userRole !== 'DOCTOR' && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
                     )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Diagnosis</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Treatment</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
                     {canManage && (
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -493,30 +507,43 @@ export default function PatientsPage() {
                             {patient.mobile}
                           </div>
                         </td>
-                        {userRole === 'SUPER_ADMIN' && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-700 dark:text-gray-300">
-                              {hospitalName !== 'N/A' ? hospitalName : '-'}
-                            </div>
-                          </td>
-                        )}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-700 dark:text-gray-300">
-                              {clinicName !== 'N/A' ? clinicName : '-'}
-                            </div>
-                          </td>
-                        )}
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-700 dark:text-gray-300">
-                              {doctorName !== 'N/A' ? doctorName : '-'}
+                        {userRole !== 'DOCTOR' && (
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                              {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400">Hospital: </span>
+                                  <span>{hospitalName}</span>
+                                </div>
+                              )}
+                              {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400">Clinic: </span>
+                                  <span>{clinicName}</span>
+                                </div>
+                              )}
+                              {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400">Doctor: </span>
+                                  <span>{doctorName}</span>
+                                </div>
+                              )}
                             </div>
                           </td>
                         )}
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
                             {patient.address || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                            {patient.diagnosis || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs line-clamp-2">
+                            {patient.treatment || '-'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -779,6 +806,30 @@ export default function PatientsPage() {
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     Must be exactly 10 digits
                   </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Diagnosis
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.diagnosis}
+                    onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors"
+                    placeholder="Enter diagnosis (optional)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Treatment
+                  </label>
+                  <textarea
+                    value={formData.treatment}
+                    onChange={(e) => setFormData({ ...formData, treatment: e.target.value })}
+                    rows={4}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors"
+                    placeholder="Enter treatment details (optional)"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

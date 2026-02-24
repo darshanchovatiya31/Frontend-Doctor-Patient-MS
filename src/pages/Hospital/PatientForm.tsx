@@ -9,7 +9,7 @@ export default function PatientForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', doctorId: '', clinicId: '', hospitalId: '' });
+  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
   const [user, setUser] = useState<any>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -150,6 +150,8 @@ export default function PatientForm() {
           name: patient.name,
           mobile: patient.mobile,
           address: patient.address || '',
+          diagnosis: patient.diagnosis || '',
+          treatment: patient.treatment || '',
           doctorId: typeof patient.doctorId === 'object' ? patient.doctorId._id : patient.doctorId || '',
           clinicId: typeof patient.clinicId === 'object' ? patient.clinicId._id : patient.clinicId || '',
           hospitalId: typeof patient.hospitalId === 'object' ? patient.hospitalId._id : patient.hospitalId || '',
@@ -183,6 +185,8 @@ export default function PatientForm() {
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
+          diagnosis: formData.diagnosis,
+          treatment: formData.treatment,
         });
         swal.success('Success', 'Patient updated successfully');
         navigate('/hospital/patients');
@@ -191,6 +195,8 @@ export default function PatientForm() {
           name: formData.name,
           mobile: formData.mobile,
           address: formData.address,
+          diagnosis: formData.diagnosis,
+          treatment: formData.treatment,
         };
 
         // Add doctorId if provided (for super admin, hospital, clinic)
@@ -362,6 +368,32 @@ export default function PatientForm() {
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Must be exactly 10 digits
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Diagnosis
+            </label>
+            <input
+              type="text"
+              value={formData.diagnosis}
+              onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+              placeholder="Enter diagnosis (optional)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Treatment
+            </label>
+            <textarea
+              value={formData.treatment}
+              onChange={(e) => setFormData({ ...formData, treatment: e.target.value })}
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
+              placeholder="Enter treatment details (optional)"
+            />
           </div>
 
           <div>

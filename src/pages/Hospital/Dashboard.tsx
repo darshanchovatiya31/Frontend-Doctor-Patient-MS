@@ -289,16 +289,12 @@ export default function HospitalDashboard() {
               <thead className="bg-gray-50 dark:bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
-                  {userRole === 'SUPER_ADMIN' && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hospital</th>
-                  )}
-                  {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Clinic</th>
-                  )}
-                  {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Doctor</th>
+                  {userRole !== 'DOCTOR' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
                   )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Diagnosis</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Treatment</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
                 </tr>
               </thead>
@@ -318,30 +314,43 @@ export default function HospitalDashboard() {
                           {patient.mobile}
                         </div>
                       </td>
-                      {userRole === 'SUPER_ADMIN' && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {hospitalName !== 'N/A' ? hospitalName : '-'}
-                          </div>
-                        </td>
-                      )}
-                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {clinicName !== 'N/A' ? clinicName : '-'}
-                          </div>
-                        </td>
-                      )}
-                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {doctorName !== 'N/A' ? doctorName : '-'}
+                      {userRole !== 'DOCTOR' && (
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                            {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-400">Hospital: </span>
+                                <span>{hospitalName}</span>
+                              </div>
+                            )}
+                            {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-400">Clinic: </span>
+                                <span>{clinicName}</span>
+                              </div>
+                            )}
+                            {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-400">Doctor: </span>
+                                <span>{doctorName}</span>
+                              </div>
+                            )}
                           </div>
                         </td>
                       )}
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
                           {patient.address || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                          {patient.diagnosis || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs line-clamp-2">
+                          {patient.treatment || '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -425,6 +434,18 @@ export default function HospitalDashboard() {
                       <div className="col-span-2 flex items-start gap-1.5">
                         <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Address:</span>
                         <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.address}</span>
+                      </div>
+                    )}
+                    {patient.diagnosis && (
+                      <div className="col-span-2 flex items-start gap-1.5">
+                        <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Diagnosis:</span>
+                        <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.diagnosis}</span>
+                      </div>
+                    )}
+                    {patient.treatment && (
+                      <div className="col-span-2 flex items-start gap-1.5">
+                        <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Treatment:</span>
+                        <span className="text-gray-700 dark:text-gray-300 line-clamp-3">{patient.treatment}</span>
                       </div>
                     )}
                   </div>

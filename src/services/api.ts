@@ -73,11 +73,8 @@ export interface Hospital {
 }
 
 export interface Clinic {
-  userEmail?: string;
-  hasPassword?: boolean;
   _id: string;
   name: string;
-  email?: string;
   hospitalId: string | Hospital;
   isActive: boolean;
   role?: string;
@@ -108,6 +105,8 @@ export interface Patient {
   name: string;
   mobile: string;
   address?: string;
+  diagnosis?: string;
+  treatment?: string;
   doctorId: string | Doctor;
   clinicId: string | Clinic;
   hospitalId: string | Hospital;
@@ -483,7 +482,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async createClinic(data: { name: string; hospitalId?: string; email?: string; password?: string }): Promise<ApiResponse<{ clinic: Clinic; user?: User }>> {
+  async createClinic(data: { name: string; hospitalId?: string }): Promise<ApiResponse<{ clinic: Clinic }>> {
     const response = await this.request<{ clinic: Clinic; user?: User } | 0>('/clinics', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -503,7 +502,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async updateClinic(data: { id: string; name?: string; isActive?: boolean; email?: string; password?: string }): Promise<ApiResponse<{ clinic: Clinic }>> {
+  async updateClinic(data: { id: string; name?: string; isActive?: boolean }): Promise<ApiResponse<{ clinic: Clinic }>> {
     const response = await this.request<{ clinic: Clinic } | 0>('/clinics/update', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -623,7 +622,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async createPatient(data: { name: string; mobile: string; address?: string; doctorId?: string; clinicId?: string; hospitalId?: string }): Promise<ApiResponse<{ patient: Patient }>> {
+  async createPatient(data: { name: string; mobile: string; address?: string; diagnosis?: string; treatment?: string; doctorId?: string; clinicId?: string; hospitalId?: string }): Promise<ApiResponse<{ patient: Patient }>> {
     const response = await this.request<{ patient: Patient } | 0>('/patients', {
       method: 'POST',
       body: JSON.stringify(data)
@@ -643,7 +642,7 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     }, HOSPITAL_API_BASE_URL);
   }
 
-  async updatePatient(data: { id: string; name?: string; mobile?: string; address?: string }): Promise<ApiResponse<{ patient: Patient }>> {
+  async updatePatient(data: { id: string; name?: string; mobile?: string; address?: string; diagnosis?: string; treatment?: string }): Promise<ApiResponse<{ patient: Patient }>> {
     const response = await this.request<{ patient: Patient } | 0>('/patients/update', {
       method: 'POST',
       body: JSON.stringify(data)

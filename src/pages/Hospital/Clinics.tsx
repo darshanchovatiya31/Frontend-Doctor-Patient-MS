@@ -18,7 +18,7 @@ export default function ClinicsPage() {
   const [limit] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
-  const [formData, setFormData] = useState({ name: '', hospitalId: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', hospitalId: '' });
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -104,13 +104,13 @@ export default function ClinicsPage() {
 
   const handleCreate = () => {
     setEditingClinic(null);
-    setFormData({ name: '', hospitalId: '', email: '', password: '' });
+    setFormData({ name: '', hospitalId: '' });
     setShowModal(true);
   };
 
   const handleEdit = async (clinic: Clinic) => {
     try {
-      // Fetch clinic details to get user email
+      // Fetch clinic details
       const response = await apiService.getClinicById(clinic._id);
       if (response.status === 200 && response.data?.clinic) {
         const clinicData = response.data.clinic;
@@ -118,9 +118,7 @@ export default function ClinicsPage() {
         const hospitalId = typeof clinicData.hospitalId === 'object' ? clinicData.hospitalId._id : clinicData.hospitalId;
         setFormData({ 
           name: clinicData.name, 
-          hospitalId: hospitalId || '', 
-          email: clinicData.userEmail || '', 
-          password: '' 
+          hospitalId: hospitalId || ''
         });
         setShowModal(true);
       } else {
@@ -129,9 +127,7 @@ export default function ClinicsPage() {
         setEditingClinic(clinic);
         setFormData({ 
           name: clinic.name, 
-          hospitalId: hospitalId || '', 
-          email: clinic.userEmail || '', 
-          password: '' 
+          hospitalId: hospitalId || ''
         });
         setShowModal(true);
       }
@@ -142,9 +138,7 @@ export default function ClinicsPage() {
       setEditingClinic(clinic);
       setFormData({ 
         name: clinic.name, 
-        hospitalId: hospitalId || '', 
-        email: clinic.userEmail || '', 
-        password: '' 
+        hospitalId: hospitalId || ''
       });
       setShowModal(true);
     }
@@ -164,32 +158,20 @@ export default function ClinicsPage() {
           updateData.hospitalId = formData.hospitalId;
         }
         
-        // Add email if provided
-        if (formData.email && formData.email.trim()) {
-          updateData.email = formData.email.trim();
-        }
-        
-        // Add password if provided
-        if (formData.password && formData.password.trim()) {
-          updateData.password = formData.password.trim();
-        }
-        
         await apiService.updateClinic(updateData);
         swal.success('Success', 'Clinic updated successfully');
         setShowModal(false);
         setEditingClinic(null);
-        setFormData({ name: '', hospitalId: '', email: '', password: '' });
+        setFormData({ name: '', hospitalId: '' });
         fetchClinics();
       } else {
         await apiService.createClinic({
           name: formData.name,
           hospitalId: formData.hospitalId || undefined,
-          email: formData.email || undefined,
-          password: formData.password || undefined,
         });
         swal.success('Success', 'Clinic created successfully');
         setShowModal(false);
-        setFormData({ name: '', hospitalId: '', email: '', password: '' });
+        setFormData({ name: '', hospitalId: '' });
         fetchClinics();
       }
     } catch (error: any) {
@@ -254,7 +236,7 @@ export default function ClinicsPage() {
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
-              placeholder="Search by name, email, or hospital..."
+              placeholder="Search by name or hospital..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all"
@@ -352,11 +334,6 @@ export default function ClinicsPage() {
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
                           {clinic.name}
                         </h3>
-                        {clinic.userEmail && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {clinic.userEmail}
-                          </p>
-                        )}
                       </div>
                       <button
                         onClick={() => handleToggleStatus(clinic._id)}
@@ -458,11 +435,6 @@ export default function ClinicsPage() {
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {clinic.name}
                           </div>
-                          {clinic.userEmail && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {clinic.userEmail}
-                            </div>
-                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -671,38 +643,6 @@ export default function ClinicsPage() {
                     </select>
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email {!editingClinic && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type="email"
-                    required={!editingClinic}
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
-                    placeholder={editingClinic ? "Leave blank to keep current email" : ""}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Password {!editingClinic && <span className="text-red-500">*</span>}
-                  </label>
-                  <input
-                    type="password"
-                    required={!editingClinic}
-                    minLength={6}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors"
-                    placeholder={editingClinic ? "Leave blank to keep current password" : ""}
-                  />
-                  {editingClinic && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Leave blank to keep current password
-                    </p>
-                  )}
-                </div>
               </form>
             </div>
 

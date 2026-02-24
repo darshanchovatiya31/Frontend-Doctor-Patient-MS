@@ -56,10 +56,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
   
   // Redirect based on user role
+  // Note: CLINIC cannot login, so they won't reach here
   let redirectPath = '/hospital/dashboard';
   if (user) {
     const userRole = (user as any).role;
-    if (['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole)) {
+    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR'].includes(userRole)) {
       redirectPath = '/hospital/dashboard';
     }
   }
@@ -74,7 +75,8 @@ function DashboardRedirect() {
   if (user) {
     const userRole = (user as any).role;
     // Redirect all roles to their appropriate dashboard
-    if (['SUPER_ADMIN', 'HOSPITAL', 'CLINIC', 'DOCTOR'].includes(userRole)) {
+    // Note: CLINIC cannot login, so they won't reach here
+    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR'].includes(userRole)) {
       return <Navigate to="/hospital/dashboard" replace />;
     }
   }
