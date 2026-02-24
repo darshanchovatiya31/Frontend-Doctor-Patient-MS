@@ -285,17 +285,17 @@ export default function HospitalDashboard() {
 
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <table className="w-full min-w-[1000px]">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b-2 border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[180px]">Patient</th>
                   {userRole !== 'DOCTOR' && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Details</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[220px]">Details</th>
                   )}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Diagnosis</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Treatment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[200px]">Address</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[200px]">Diagnosis</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[220px]">Treatment</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[140px]">Created At</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-white/[0.03] divide-y divide-gray-200 dark:divide-gray-800">
@@ -304,64 +304,82 @@ export default function HospitalDashboard() {
                   const clinicName = typeof patient.clinicId === 'object' ? patient.clinicId?.name : 'N/A';
                   const doctorName = typeof patient.doctorId === 'object' ? patient.doctorId?.name : 'N/A';
                   
+                  const detailsText = [
+                    userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' ? `Hospital: ${hospitalName}` : '',
+                    (userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' ? `Clinic: ${clinicName}` : '',
+                    (userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' ? `Doctor: ${doctorName}` : ''
+                  ].filter(Boolean).join(' • ');
+                  
                   return (
                     <tr key={patient._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
                           {patient.name}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {patient.mobile}
                         </div>
                       </td>
                       {userRole !== 'DOCTOR' && (
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                        <td className="px-4 py-4">
+                          <div 
+                            className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
+                            title={detailsText}
+                          >
                             {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
-                              <div>
-                                <span className="text-gray-500 dark:text-gray-400">Hospital: </span>
-                                <span>{hospitalName}</span>
+                              <div className="mb-1">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Hospital: </span>
+                                <span className="text-gray-900 dark:text-white">{hospitalName}</span>
                               </div>
                             )}
                             {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
-                              <div>
-                                <span className="text-gray-500 dark:text-gray-400">Clinic: </span>
-                                <span>{clinicName}</span>
+                              <div className="mb-1">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Clinic: </span>
+                                <span className="text-gray-900 dark:text-white">{clinicName}</span>
                               </div>
                             )}
                             {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
                               <div>
-                                <span className="text-gray-500 dark:text-gray-400">Doctor: </span>
-                                <span>{doctorName}</span>
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Doctor: </span>
+                                <span className="text-gray-900 dark:text-white">{doctorName}</span>
                               </div>
                             )}
                           </div>
                         </td>
                       )}
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                          {patient.address || '-'}
+                      <td className="px-4 py-4">
+                        <div 
+                          className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
+                          title={patient.address || undefined}
+                        >
+                          {patient.address || <span className="text-gray-400 dark:text-gray-500">-</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
-                          {patient.diagnosis || '-'}
+                      <td className="px-4 py-4">
+                        <div 
+                          className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
+                          title={patient.diagnosis || undefined}
+                        >
+                          {patient.diagnosis || <span className="text-gray-400 dark:text-gray-500">-</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-xs line-clamp-2">
-                          {patient.treatment || '-'}
+                      <td className="px-4 py-4">
+                        <div 
+                          className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
+                          title={patient.treatment || undefined}
+                        >
+                          {patient.treatment || <span className="text-gray-400 dark:text-gray-500">-</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {new Date(patient.createdAt).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
                           })}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {new Date(patient.createdAt).toLocaleTimeString('en-US', {
                             hour: '2-digit',
                             minute: '2-digit'
@@ -433,19 +451,34 @@ export default function HospitalDashboard() {
                     {patient.address && (
                       <div className="col-span-2 flex items-start gap-1.5">
                         <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Address:</span>
-                        <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.address}</span>
+                        <span 
+                          className="text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
+                          title={patient.address}
+                        >
+                          {patient.address}
+                        </span>
                       </div>
                     )}
                     {patient.diagnosis && (
                       <div className="col-span-2 flex items-start gap-1.5">
                         <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Diagnosis:</span>
-                        <span className="text-gray-700 dark:text-gray-300 line-clamp-2">{patient.diagnosis}</span>
+                        <span 
+                          className="text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
+                          title={patient.diagnosis}
+                        >
+                          {patient.diagnosis}
+                        </span>
                       </div>
                     )}
                     {patient.treatment && (
                       <div className="col-span-2 flex items-start gap-1.5">
                         <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Treatment:</span>
-                        <span className="text-gray-700 dark:text-gray-300 line-clamp-3">{patient.treatment}</span>
+                        <span 
+                          className="text-gray-700 dark:text-gray-300 line-clamp-3 cursor-help"
+                          title={patient.treatment}
+                        >
+                          {patient.treatment}
+                        </span>
                       </div>
                     )}
                   </div>
