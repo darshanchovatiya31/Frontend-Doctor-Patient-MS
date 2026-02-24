@@ -75,7 +75,7 @@ export default function PatientForm() {
 
   const fetchHospitals = async () => {
     try {
-      const response = await apiService.getHospitals({ page: 1, limit: 1000 });
+      const response = await apiService.getHospitals({ page: 1, limit: 1000, isActive: 'active' });
       if (response.status === 200 && response.data) {
         setHospitals(response.data.docs || []);
       }
@@ -86,7 +86,7 @@ export default function PatientForm() {
 
   const fetchClinics = async () => {
     try {
-      const params: any = { page: 1, limit: 1000 };
+      const params: any = { page: 1, limit: 1000, isActive: 'active' };
       if (user?.role === 'SUPER_ADMIN' && formData.hospitalId) {
         params.hospitalId = formData.hospitalId;
       }
@@ -101,7 +101,7 @@ export default function PatientForm() {
 
   const fetchClinicsForHospital = async () => {
     try {
-      const response = await apiService.getClinics({ page: 1, limit: 1000 });
+      const response = await apiService.getClinics({ page: 1, limit: 1000, isActive: 'active' });
       if (response.status === 200 && response.data) {
         setClinics(response.data.docs || []);
       }
@@ -112,7 +112,7 @@ export default function PatientForm() {
 
   const fetchDoctors = async () => {
     try {
-      const params: any = { page: 1, limit: 1000 };
+      const params: any = { page: 1, limit: 1000, isActive: 'active' };
       if (user?.role === 'SUPER_ADMIN' && formData.clinicId) {
         params.clinicId = formData.clinicId;
       } else if (user?.role === 'HOSPITAL' && formData.clinicId) {
@@ -131,7 +131,7 @@ export default function PatientForm() {
 
   const fetchDoctorsForClinic = async () => {
     try {
-      const response = await apiService.getDoctors({ page: 1, limit: 1000 });
+      const response = await apiService.getDoctors({ page: 1, limit: 1000, isActive: 'active' });
       if (response.status === 200 && response.data) {
         setDoctors(response.data.docs || []);
       }

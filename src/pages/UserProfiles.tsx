@@ -5,6 +5,8 @@ import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
 import Form from "../components/form/Form";
 import api from "../services/api"; // Adjust path to your API class instance
+import apiService from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 interface UserProfile {
   email: string;
@@ -20,6 +22,7 @@ interface PasswordForm {
 }
 
 export default function UserProfiles() {
+  const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile>({
     email: "",
     name: "",
@@ -59,18 +62,30 @@ export default function UserProfiles() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await api.getProfile();
+        // Check if user is from hospital management system (HOSPITAL, CLINIC, DOCTOR, PERSONAL_DOCTOR, SUPER_ADMIN)
+        const isHospitalUser = user && ['HOSPITAL', 'CLINIC', 'DOCTOR', 'PERSONAL_DOCTOR', 'SUPER_ADMIN'].includes(user.role);
+        
+        let response;
+        if (isHospitalUser) {
+          response = await apiService.getHospitalProfile();
+        } else {
+          response = await api.getProfile();
+        }
+        
         if (response.status === 200) {
-          const admin = response.data.admin;
+          // Hospital API returns { user }, Admin API returns { admin }
+          const userData = isHospitalUser 
+            ? (response.data as { user: any }).user 
+            : (response.data as { admin: any }).admin;
           setUserProfile({
-            email: admin.email,
-            name: admin.name,
-            role: admin.role,
-            joinDate: admin.createdAt
+            email: userData.email || '',
+            name: userData.name,
+            role: userData.role,
+            joinDate: userData.createdAt
           });
           setProfileForm({
-            name: admin.name,
-            email: admin.email
+            name: userData.name,
+            email: userData.email || ''
           });
         } else {
           setErrors(prev => ({ ...prev, general: response.message || "Failed to load profile" }));
@@ -83,32 +98,12 @@ export default function UserProfiles() {
     };
 
     fetchProfile();
-  }, []);
+  }, [user]);
 
   // Email validation
   const validateEmail = (email: string) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
-  };
-
-  // Password validation
-  const validatePassword = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    return {
-      isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
-      requirements: {
-        minLength,
-        hasUpperCase,
-        hasLowerCase,
-        hasNumbers,
-        hasSpecialChar
-      }
-    };
   };
 
   // Handle profile update (name and email)
@@ -140,21 +135,56 @@ export default function UserProfiles() {
     }
 
     try {
-      const response = await api.updateProfile({
-        name: profileForm.name,
-        email: profileForm.email
-      });
+      // Check if user is from hospital management system
+      const isHospitalUser = user && ['HOSPITAL', 'CLINIC', 'DOCTOR', 'PERSONAL_DOCTOR', 'SUPER_ADMIN'].includes(user.role);
+      
+      let response;
+      if (isHospitalUser) {
+        response = await apiService.updateHospitalProfile({
+          name: profileForm.name,
+          email: profileForm.email
+        });
+      } else {
+        response = await api.updateProfile({
+          name: profileForm.name,
+          email: profileForm.email
+        });
+      }
+      
       if (response.status === 200) {
+        // Hospital API returns { user }, Admin API returns { admin }
+        const updatedUser = isHospitalUser 
+          ? (response.data as { user: any }).user 
+          : (response.data as { admin: any }).admin;
+        
         setUserProfile(prev => ({
           ...prev,
-          name: response.data.admin.name,
-          email: response.data.admin.email
+          name: updatedUser.name,
+          email: updatedUser.email || ''
         }));
-        // setSuccess(prev => ({ ...prev, profile: true }));
+        
+        // Update localStorage with new user data
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            userData.name = updatedUser.name;
+            userData.email = updatedUser.email || '';
+            localStorage.setItem('user', JSON.stringify(userData));
+            
+            // Trigger a page reload or update context if needed
+            // For now, we'll just update localStorage and the user will see changes on next navigation
+            // Or we can dispatch a custom event to update the header
+            window.dispatchEvent(new Event('userUpdated'));
+          } catch (e) {
+            console.error('Error updating localStorage:', e);
+          }
+        }
+        
         swal.success('Success', 'Profile updated successfully!');
-        setTimeout(() => {
-          // setSuccess(prev => ({ ...prev, profile: false }));
-        }, 3000);
+        
+        // Dispatch event to update AuthContext
+        window.dispatchEvent(new Event('userUpdated'));
       } else {
         setErrors(prev => ({ ...prev, profile: response.message || "Failed to update profile" }));
         swal.error('Error', response.message || 'Failed to update profile');
@@ -175,53 +205,96 @@ export default function UserProfiles() {
 
     // Validation
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setErrors(prev => ({ ...prev, password: "All fields are required" }));
+      const errorMsg = "All fields are required";
+      setErrors(prev => ({ ...prev, password: errorMsg }));
       setIsLoading(prev => ({ ...prev, password: false }));
-      swal.error('Error', 'All fields are required');
+      swal.error('Error', errorMsg);
       return;
     }
 
-    const passwordValidation = validatePassword(passwordForm.newPassword);
-    if (!passwordValidation.isValid) {
-      setErrors(prev => ({ ...prev, password: "Password does not meet requirements" }));
+    // Validate password - minimum 6 characters (same as creation)
+    if (passwordForm.newPassword.length < 6) {
+      const errorMsg = "Password must be at least 6 characters";
+      setErrors(prev => ({ ...prev, password: errorMsg }));
       setIsLoading(prev => ({ ...prev, password: false }));
-      swal.error('Error', 'Password does not meet requirements');
+      swal.error('Error', errorMsg);
       return;
     }
 
+    // Check if new password and confirm password match - MUST be checked before API call
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setErrors(prev => ({ ...prev, password: "New passwords do not match" }));
+      const errorMsg = "New password and confirm password do not match. Please make sure both passwords are the same.";
+      setErrors(prev => ({ ...prev, password: errorMsg }));
       setIsLoading(prev => ({ ...prev, password: false }));
-      swal.error('Error', 'New passwords do not match');
+      swal.error('Error', errorMsg);
       return;
     }
 
     if (passwordForm.currentPassword === passwordForm.newPassword) {
-      setErrors(prev => ({ ...prev, password: "New password must be different from current password" }));
+      const errorMsg = "New password must be different from current password";
+      setErrors(prev => ({ ...prev, password: errorMsg }));
       setIsLoading(prev => ({ ...prev, password: false }));
-      swal.error('Error', 'New password must be different from current password');
+      swal.error('Error', errorMsg);
       return;
     }
 
     try {
-      const response = await api.changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      });
+      // Check if user is from hospital management system
+      const isHospitalUser = user && ['HOSPITAL', 'CLINIC', 'DOCTOR', 'PERSONAL_DOCTOR', 'SUPER_ADMIN'].includes(user.role);
+      
+      let response;
+      if (isHospitalUser) {
+        response = await apiService.changeHospitalPassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        });
+      } else {
+        response = await api.changePassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        });
+      }
+      
       if (response.status === 200) {
         setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-        // setSuccess(prev => ({ ...prev, password: true }));
+        setErrors(prev => ({ ...prev, password: "" }));
         swal.success('Success', 'Password changed successfully!');
-        setTimeout(() => {
-          // setSuccess(prev => ({ ...prev, password: false }));
-        }, 3000);
       } else {
-        setErrors(prev => ({ ...prev, password: response.message || "Failed to change password" }));
-        swal.error('Error', response.message || 'Failed to change password');
+        // Handle specific error messages from backend
+        let errorMsg = response.message || "Failed to change password";
+        
+        // Check for specific error messages
+        if (response.message && (
+          response.message.toLowerCase().includes('incorrect') || 
+          response.message.toLowerCase().includes('current password') ||
+          response.message.toLowerCase().includes('wrong password')
+        )) {
+          errorMsg = "Current password is incorrect. Please enter the correct current password.";
+        } else if (response.message && response.message.toLowerCase().includes('match')) {
+          errorMsg = "New password and confirm password do not match. Please make sure both passwords are the same.";
+        }
+        
+        setErrors(prev => ({ ...prev, password: errorMsg }));
+        swal.error('Error', errorMsg);
       }
-    } catch (error) {
-      setErrors(prev => ({ ...prev, password: "Failed to change password. Please try again." }));
-      swal.error('Error', 'Failed to change password. Please try again.');
+    } catch (error: any) {
+      let errorMsg = "Failed to change password. Please try again.";
+      
+      // Check error message for specific cases
+      if (error.message) {
+        if (error.message.toLowerCase().includes('incorrect') || 
+            error.message.toLowerCase().includes('current password') ||
+            error.message.toLowerCase().includes('wrong password')) {
+          errorMsg = "Current password is incorrect. Please enter the correct current password.";
+        } else if (error.message.toLowerCase().includes('match')) {
+          errorMsg = "New password and confirm password do not match. Please make sure both passwords are the same.";
+        } else {
+          errorMsg = error.message || errorMsg;
+        }
+      }
+      
+      setErrors(prev => ({ ...prev, password: errorMsg }));
+      swal.error('Error', errorMsg);
     } finally {
       setIsLoading(prev => ({ ...prev, password: false }));
     }
@@ -467,32 +540,16 @@ export default function UserProfiles() {
                 </div>
               </div>
 
-              {/* Password Requirements */}
+              {/* Password Requirements - matches creation (minimum 6 characters) */}
               {passwordForm.newPassword && (
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Password Requirements:
                   </h4>
                   <div className="grid grid-cols-1 gap-2">
-                    <div className={`flex items-center gap-2 text-sm ${passwordForm.newPassword.length >= 8 ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${passwordForm.newPassword.length >= 8 ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      At least 8 characters
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[A-Z]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[A-Z]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      One uppercase letter
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[a-z]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[a-z]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      One lowercase letter
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${/\d/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/\d/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      One number
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                      <div className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      One special character
+                    <div className={`flex items-center gap-2 text-sm ${passwordForm.newPassword.length >= 6 ? 'text-brand-600 dark:text-brand-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <div className={`w-2 h-2 rounded-full ${passwordForm.newPassword.length >= 6 ? 'bg-brand-600' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                      At least 6 characters
                     </div>
                   </div>
                 </div>

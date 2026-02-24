@@ -43,7 +43,7 @@ export default function DoctorsPage() {
 
   const fetchHospitals = async () => {
     try {
-      const response = await apiService.getHospitals({ page: 1, limit: 1000 });
+      const response = await apiService.getHospitals({ page: 1, limit: 1000, isActive: 'active' });
       if (response.status === 200 && response.data) {
         setHospitals(response.data.docs || []);
       }
@@ -54,7 +54,7 @@ export default function DoctorsPage() {
 
   const fetchClinics = async () => {
     try {
-      const params: any = { page: 1, limit: 1000 };
+      const params: any = { page: 1, limit: 1000, isActive: 'active' };
       // If super admin selected a hospital, filter clinics by that hospital
       if (user?.role === 'SUPER_ADMIN' && formData.hospitalId) {
         params.hospitalId = formData.hospitalId;

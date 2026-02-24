@@ -34,13 +34,18 @@ export interface DashboardStats {
   totalHospitals?: number;
   totalClinics?: number;
   totalDoctors?: number;
+  totalPersonalDoctors?: number;
   totalPatients?: number;
+  totalHospitalPatients?: number;
+  totalPersonalDoctorPatients?: number;
   activeDoctors?: number;
   todayPatients?: number;
   recentPatients?: Patient[];
+  recentHospitalPatients?: Patient[];
+  recentPersonalDoctorPatients?: Patient[];
 }
 
-export type UserRole = 'SUPER_ADMIN' | 'HOSPITAL' | 'CLINIC' | 'DOCTOR';
+export type UserRole = 'SUPER_ADMIN' | 'HOSPITAL' | 'CLINIC' | 'DOCTOR' | 'PERSONAL_DOCTOR';
 
 export interface User {
   _id: string;
@@ -614,9 +619,93 @@ async getProfile(id?: string): Promise<ApiResponse<{ admin: User }>> {
     return response as ApiResponse<{ doctor: Doctor }>;
   }
 
+  // Personal Doctors
+  async getPersonalDoctors(params: PaginationParams & { isActive?: string } = {}): Promise<ApiResponse> {
+    return this.request('/personal-doctors/list', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    }, HOSPITAL_API_BASE_URL);
+  }
+
+  async createPersonalDoctor(data: { name: string; email: string; password: string }): Promise<ApiResponse<{ personalDoctor: Doctor }>> {
+    const response = await this.request<{ personalDoctor: Doctor } | 0>('/personal-doctors', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to create personal doctor');
+    }
+    
+    return response as ApiResponse<{ personalDoctor: Doctor }>;
+  }
+
+  async getPersonalDoctorById(id: string): Promise<ApiResponse<{ personalDoctor: Doctor }>> {
+    return this.request(`/personal-doctors/${id}`, {
+      method: 'GET'
+    }, HOSPITAL_API_BASE_URL);
+  }
+
+  async updatePersonalDoctor(data: { id: string; isActive?: boolean; name?: string; email?: string; password?: string }): Promise<ApiResponse<{ personalDoctor: Doctor }>> {
+    const response = await this.request<{ personalDoctor: Doctor } | 0>('/personal-doctors/update', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to update personal doctor');
+    }
+    
+    return response as ApiResponse<{ personalDoctor: Doctor }>;
+  }
+
+  async deletePersonalDoctor(id: string): Promise<ApiResponse> {
+    const response = await this.request<0>('/personal-doctors/delete', {
+      method: 'POST',
+      body: JSON.stringify({ id })
+    }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to delete personal doctor');
+    }
+    
+    return response;
+  }
+
+  async togglePersonalDoctorStatus(id: string): Promise<ApiResponse<{ personalDoctor: Doctor }>> {
+    const response = await this.request<{ personalDoctor: Doctor } | 0>('/personal-doctors/toggle-status', {
+      method: 'POST',
+      body: JSON.stringify({ id })
+    }, HOSPITAL_API_BASE_URL);
+    
+    // Check if backend returned an error message with data: 0 (status 200 but error condition)
+    if (response.data === 0 || response.data === null || (!response.data && response.message)) {
+      throw new Error(response.message || 'Failed to toggle personal doctor status');
+    }
+    
+    return response as ApiResponse<{ personalDoctor: Doctor }>;
+  }
+
   // Patients
   async getPatients(params: PaginationParams & { doctorId?: string; clinicId?: string; hospitalId?: string } = {}): Promise<ApiResponse> {
     return this.request('/patients/list', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    }, HOSPITAL_API_BASE_URL);
+  }
+
+  async getHospitalPatients(params: PaginationParams & { search?: string } = {}): Promise<ApiResponse> {
+    return this.request('/patients/hospital-patients', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    }, HOSPITAL_API_BASE_URL);
+  }
+
+  async getPersonalDoctorPatients(params: PaginationParams & { search?: string } = {}): Promise<ApiResponse> {
+    return this.request('/patients/personal-doctor-patients', {
       method: 'POST',
       body: JSON.stringify(params)
     }, HOSPITAL_API_BASE_URL);

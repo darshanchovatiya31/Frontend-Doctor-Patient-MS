@@ -12,7 +12,10 @@ import HospitalDashboard from "./pages/Hospital/Dashboard";
 import HospitalsPage from "./pages/Hospital/Hospitals";
 import ClinicsPage from "./pages/Hospital/Clinics";
 import DoctorsPage from "./pages/Hospital/Doctors";
+import PersonalDoctorsPage from "./pages/Hospital/PersonalDoctors";
 import PatientsPage from "./pages/Hospital/Patients";
+import HospitalPatientsPage from "./pages/Hospital/HospitalPatients";
+import PersonalDoctorPatientsPage from "./pages/Hospital/PersonalDoctorPatients";
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -60,7 +63,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   let redirectPath = '/hospital/dashboard';
   if (user) {
     const userRole = (user as any).role;
-    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR'].includes(userRole)) {
+    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR', 'PERSONAL_DOCTOR'].includes(userRole)) {
       redirectPath = '/hospital/dashboard';
     }
   }
@@ -76,7 +79,7 @@ function DashboardRedirect() {
     const userRole = (user as any).role;
     // Redirect all roles to their appropriate dashboard
     // Note: CLINIC cannot login, so they won't reach here
-    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR'].includes(userRole)) {
+    if (['SUPER_ADMIN', 'HOSPITAL', 'DOCTOR', 'PERSONAL_DOCTOR'].includes(userRole)) {
       return <Navigate to="/hospital/dashboard" replace />;
     }
   }
@@ -123,9 +126,24 @@ function AppRoutes() {
               <DoctorsPage />
             </ProtectedRoute>
           } />
+          <Route path="/hospital/personal-doctors" element={
+            <ProtectedRoute>
+              <PersonalDoctorsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/hospital/patients" element={
             <ProtectedRoute>
               <PatientsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/hospital/hospital-patients" element={
+            <ProtectedRoute>
+              <HospitalPatientsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/hospital/personal-doctor-patients" element={
+            <ProtectedRoute>
+              <PersonalDoctorPatientsPage />
             </ProtectedRoute>
           } />
         </Route>

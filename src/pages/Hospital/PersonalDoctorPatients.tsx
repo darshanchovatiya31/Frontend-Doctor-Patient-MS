@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import apiService, { Patient, Hospital, Clinic, Doctor } from "../../services/api";
+import apiService, { Patient } from "../../services/api";
 import swal from '../../utils/swalHelper';
-import { Plus, Search, Edit, Trash2, Download, FileDown } from 'lucide-react';
+import { Search, Edit, Trash2, Download, FileDown } from 'lucide-react';
 import { TableSkeleton } from '../../components/common/Skeleton';
 
-export default function PatientsPage() {
+export default function PersonalDoctorPatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,10 +15,7 @@ export default function PatientsPage() {
   const [user, setUser] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [formData, setFormData] = useState({ name: '', mobile: '', address: '', diagnosis: '', treatment: '' });
   const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
@@ -27,15 +24,6 @@ export default function PatientsPage() {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
-        
-        // Load dropdowns based on role
-        if (userData.role === 'SUPER_ADMIN') {
-          fetchHospitals();
-        } else if (userData.role === 'HOSPITAL') {
-          fetchClinicsForHospital();
-        } else if (userData.role === 'CLINIC') {
-          fetchDoctorsForClinic();
-        }
       } catch (e) {
         console.error('Error parsing user:', e);
       }
@@ -43,33 +31,10 @@ export default function PatientsPage() {
     fetchPatients();
   }, [currentPage, searchTerm]);
 
-  // Fetch doctors when clinic is selected (for super admin)
-  useEffect(() => {
-    if (user?.role === 'SUPER_ADMIN' && formData.clinicId && !editingPatient) {
-      fetchDoctors();
-    }
-  }, [formData.clinicId]);
-
-  // Fetch clinics when hospital is selected (for super admin)
-  useEffect(() => {
-    if (user?.role === 'SUPER_ADMIN' && formData.hospitalId && !editingPatient) {
-      fetchClinics();
-      setFormData(prev => ({ ...prev, clinicId: '', doctorId: '' }));
-    }
-  }, [formData.hospitalId]);
-
-  // Fetch doctors when clinic is selected (for hospital)
-  useEffect(() => {
-    if (user?.role === 'HOSPITAL' && formData.clinicId && !editingPatient) {
-      fetchDoctors();
-      setFormData(prev => ({ ...prev, doctorId: '' }));
-    }
-  }, [formData.clinicId]);
-
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getPatients({
+      const response = await apiService.getPersonalDoctorPatients({
         page: currentPage,
         limit,
         search: searchTerm || undefined,
@@ -80,11 +45,11 @@ export default function PatientsPage() {
         setTotalPages(response.data.totalPages || 1);
         setTotalDocs(response.data.totalDocs || 0);
       } else {
-        throw new Error(response.message || 'Failed to load patients');
+        throw new Error(response.message || 'Failed to load personal doctor patients');
       }
     } catch (error: any) {
-      console.error('Error fetching patients:', error);
-      swal.error('Error', error.message || 'Failed to load patients');
+      console.error('Error fetching personal doctor patients:', error);
+      swal.error('Error', error.message || 'Failed to load personal doctor patients');
     } finally {
       setLoading(false);
     }
@@ -122,79 +87,6 @@ export default function PatientsPage() {
     }
   };
 
-  const fetchHospitals = async () => {
-    try {
-      const response = await apiService.getHospitals({ page: 1, limit: 1000, isActive: 'active' });
-      if (response.status === 200 && response.data) {
-        setHospitals(response.data.docs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching hospitals:', error);
-    }
-  };
-
-  const fetchClinics = async () => {
-    try {
-      const params: any = { page: 1, limit: 1000, isActive: 'active' };
-      if (user?.role === 'SUPER_ADMIN' && formData.hospitalId) {
-        params.hospitalId = formData.hospitalId;
-      }
-      const response = await apiService.getClinics(params);
-      if (response.status === 200 && response.data) {
-        setClinics(response.data.docs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching clinics:', error);
-    }
-  };
-
-  const fetchClinicsForHospital = async () => {
-    try {
-      const response = await apiService.getClinics({ page: 1, limit: 1000, isActive: 'active' });
-      if (response.status === 200 && response.data) {
-        setClinics(response.data.docs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching clinics:', error);
-    }
-  };
-
-  const fetchDoctors = async () => {
-    try {
-      const params: any = { page: 1, limit: 1000, isActive: 'active' };
-      if (user?.role === 'SUPER_ADMIN' && formData.clinicId) {
-        params.clinicId = formData.clinicId;
-      } else if (user?.role === 'HOSPITAL' && formData.clinicId) {
-        params.clinicId = formData.clinicId;
-      } else if (user?.role === 'CLINIC') {
-        params.clinicId = user._id;
-      }
-      const response = await apiService.getDoctors(params);
-      if (response.status === 200 && response.data) {
-        setDoctors(response.data.docs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching doctors:', error);
-    }
-  };
-
-  const fetchDoctorsForClinic = async () => {
-    try {
-      const response = await apiService.getDoctors({ page: 1, limit: 1000, isActive: 'active' });
-      if (response.status === 200 && response.data) {
-        setDoctors(response.data.docs || []);
-      }
-    } catch (error) {
-      console.error('Error fetching doctors:', error);
-    }
-  };
-
-  const handleCreate = () => {
-    setEditingPatient(null);
-    setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
-    setShowModal(true);
-  };
-
   const handleEdit = async (patient: Patient) => {
     try {
       setFormLoading(true);
@@ -208,9 +100,6 @@ export default function PatientsPage() {
           address: patientData.address || '',
           diagnosis: patientData.diagnosis || '',
           treatment: patientData.treatment || '',
-          doctorId: (patientData.doctorId && typeof patientData.doctorId === 'object') ? patientData.doctorId._id : (patientData.doctorId || ''),
-          clinicId: (patientData.clinicId && typeof patientData.clinicId === 'object') ? patientData.clinicId._id : (patientData.clinicId || ''),
-          hospitalId: (patientData.hospitalId && typeof patientData.hospitalId === 'object') ? patientData.hospitalId._id : (patientData.hospitalId || ''),
         });
         setShowModal(true);
       } else {
@@ -227,7 +116,6 @@ export default function PatientsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate mobile
     if (!/^\d{10}$/.test(formData.mobile)) {
       swal.error('Error', 'Mobile number must be exactly 10 digits');
       return;
@@ -235,51 +123,19 @@ export default function PatientsPage() {
 
     try {
       setFormLoading(true);
-      if (editingPatient) {
-        await apiService.updatePatient({
-          id: editingPatient._id,
-          name: formData.name,
-          mobile: formData.mobile,
-          address: formData.address,
-          diagnosis: formData.diagnosis,
-          treatment: formData.treatment,
-        });
-        swal.success('Success', 'Patient updated successfully');
-        setShowModal(false);
-        setEditingPatient(null);
-        setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
-        fetchPatients();
-      } else {
-        const createData: any = {
-          name: formData.name,
-          mobile: formData.mobile,
-          address: formData.address,
-          diagnosis: formData.diagnosis,
-          treatment: formData.treatment,
-        };
-
-        // Personal Doctor creates patients without hospital/clinic
-        if (user?.role === 'PERSONAL_DOCTOR') {
-          // No doctorId, clinicId, or hospitalId needed - backend will handle it
-        } else {
-          // Add doctorId if provided (for super admin, hospital, clinic, doctor)
-          if (formData.doctorId) {
-            createData.doctorId = formData.doctorId;
-          }
-          if (formData.clinicId && user?.role === 'SUPER_ADMIN') {
-            createData.clinicId = formData.clinicId;
-          }
-          if (formData.hospitalId && user?.role === 'SUPER_ADMIN') {
-            createData.hospitalId = formData.hospitalId;
-          }
-        }
-
-        await apiService.createPatient(createData);
-        swal.success('Success', 'Patient created successfully');
-        setShowModal(false);
-        setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '', doctorId: '', clinicId: '', hospitalId: '' });
-        fetchPatients();
-      }
+      await apiService.updatePatient({
+        id: editingPatient!._id,
+        name: formData.name,
+        mobile: formData.mobile,
+        address: formData.address,
+        diagnosis: formData.diagnosis,
+        treatment: formData.treatment,
+      });
+      swal.success('Success', 'Patient updated successfully');
+      setShowModal(false);
+      setEditingPatient(null);
+      setFormData({ name: '', mobile: '', address: '', diagnosis: '', treatment: '' });
+      fetchPatients();
     } catch (error: any) {
       swal.error('Error', error.message || 'Operation failed');
     } finally {
@@ -288,46 +144,19 @@ export default function PatientsPage() {
   };
 
   const userRole = user?.role || '';
-  const canManage = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'PERSONAL_DOCTOR';
-  const canCreate = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'DOCTOR' || userRole === 'PERSONAL_DOCTOR';
+  const canManage = userRole === 'SUPER_ADMIN';
+
+  if (!canManage) {
+    return null;
+  }
 
   return (
     <>
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Patients</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and monitor all patients</p>
-            {/* Export buttons on mobile - below name */}
-            {canManage && (
-              <div className="flex flex-wrap gap-2 mt-3 sm:hidden">
-                <button
-                  onClick={() => handleExport('excel')}
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 shadow-sm hover:shadow transition-all"
-                >
-                  <FileDown className="h-4 w-4" />
-                  Export Excel
-                </button>
-                <button
-                  onClick={() => handleExport('pdf')}
-                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 shadow-sm hover:shadow transition-all"
-                >
-                  <Download className="h-4 w-4" />
-                  Export PDF
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-          {canCreate && (
-            <button
-              onClick={handleCreate}
-              className="flex-shrink-0 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 shadow-sm hover:shadow transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add </span><span className="hidden sm:inline">Patient</span>
-            </button>
-          )}
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Personal Doctor Patients</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage patients added by Personal Doctors</p>
           </div>
         </div>
       </div>
@@ -345,7 +174,6 @@ export default function PatientsPage() {
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all"
             />
           </div>
-          {/* Export buttons on desktop - replace search button */}
           {canManage && (
             <div className="hidden sm:flex gap-2">
               <button
@@ -372,14 +200,12 @@ export default function PatientsPage() {
       {/* Patients Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden overflow-x-auto">
         {loading ? (
-          <TableSkeleton rows={5} columns={6} />
+          <TableSkeleton rows={5} columns={5} />
         ) : patients.length > 0 ? (
           <>
             {/* Mobile Card View */}
             <div className="lg:hidden p-3 space-y-3">
               {patients.map((patient: any) => {
-                const hospitalName = typeof patient.hospitalId === 'object' ? patient.hospitalId?.name : 'N/A';
-                const clinicName = typeof patient.clinicId === 'object' ? patient.clinicId?.name : 'N/A';
                 const doctorName = typeof patient.doctorId === 'object' ? patient.doctorId?.name : 'N/A';
                 
                 return (
@@ -387,7 +213,6 @@ export default function PatientsPage() {
                     key={patient._id}
                     className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
                   >
-                    {/* Header Row */}
                     <div className="flex items-start justify-between gap-2 mb-2.5">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-0.5">
@@ -413,62 +238,21 @@ export default function PatientsPage() {
                       </div>
                     </div>
 
-                    {/* Details Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-                      {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
+                    <div className="space-y-1.5 text-xs mb-2.5">
+                      {doctorName !== 'N/A' && (
                         <div className="flex items-start gap-1.5">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Hospital:</span>
-                          <span className="text-gray-700 dark:text-gray-300 truncate">{hospitalName}</span>
-                        </div>
-                      )}
-                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
-                        <div className="flex items-start gap-1.5">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Clinic:</span>
-                          <span className="text-gray-700 dark:text-gray-300 truncate">{clinicName}</span>
-                        </div>
-                      )}
-                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
-                        <div className="flex items-start gap-1.5">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Doctor:</span>
+                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Personal Doctor:</span>
                           <span className="text-gray-700 dark:text-gray-300 truncate">{doctorName}</span>
                         </div>
                       )}
                       {patient.address && (
-                        <div className="col-span-2 flex items-start gap-1.5">
+                        <div className="flex items-start gap-1.5">
                           <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Address:</span>
-                          <span 
-                            className="text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
-                            title={patient.address}
-                          >
-                            {patient.address}
-                          </span>
-                        </div>
-                      )}
-                      {patient.diagnosis && (
-                        <div className="col-span-2 flex items-start gap-1.5">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Diagnosis:</span>
-                          <span 
-                            className="text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
-                            title={patient.diagnosis}
-                          >
-                            {patient.diagnosis}
-                          </span>
-                        </div>
-                      )}
-                      {patient.treatment && (
-                        <div className="col-span-2 flex items-start gap-1.5">
-                          <span className="text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">Treatment:</span>
-                          <span 
-                            className="text-gray-700 dark:text-gray-300 line-clamp-3 cursor-help"
-                            title={patient.treatment}
-                          >
-                            {patient.treatment}
-                          </span>
+                          <span className="text-gray-700 dark:text-gray-300 line-clamp-2" title={patient.address}>{patient.address}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Actions */}
                     {canManage && (
                       <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <button
@@ -492,33 +276,21 @@ export default function PatientsPage() {
 
             {/* Desktop Table View */}
             <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 border-b-2 border-gray-200 dark:border-gray-700">
                   <tr>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[180px]">Patient</th>
-                    {userRole !== 'DOCTOR' && userRole !== 'PERSONAL_DOCTOR' && (
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[220px]">Details</th>
-                    )}
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[200px]">Address</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[200px]">Diagnosis</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[220px]">Treatment</th>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[140px]">Created At</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Patient Name</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Personal Doctor Name</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Contact Information</th>
+                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Created Date</th>
                     {canManage && (
-                      <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider w-[100px]">Actions</th>
+                      <th className="px-4 py-3.5 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                     )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-white/[0.03] divide-y divide-gray-200 dark:divide-gray-800">
                   {patients.map((patient: any) => {
-                    const hospitalName = typeof patient.hospitalId === 'object' ? patient.hospitalId?.name : 'N/A';
-                    const clinicName = typeof patient.clinicId === 'object' ? patient.clinicId?.name : 'N/A';
                     const doctorName = typeof patient.doctorId === 'object' ? patient.doctorId?.name : 'N/A';
-                    
-                    const detailsText = [
-                      userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' ? `Hospital: ${hospitalName}` : '',
-                      (userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' ? `Clinic: ${clinicName}` : '',
-                      (userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' ? `Doctor: ${doctorName}` : ''
-                    ].filter(Boolean).join(' • ');
                     
                     return (
                       <tr 
@@ -529,60 +301,21 @@ export default function PatientsPage() {
                           <div className="text-sm font-semibold text-gray-900 dark:text-white">
                             {patient.name}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                            {doctorName !== 'N/A' ? doctorName : '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300">
                             {patient.mobile}
                           </div>
-                        </td>
-                        {userRole !== 'DOCTOR' && userRole !== 'PERSONAL_DOCTOR' && (
-                          <td className="px-4 py-4">
-                            <div 
-                              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
-                              title={detailsText}
-                            >
-                              {userRole === 'SUPER_ADMIN' && hospitalName !== 'N/A' && (
-                                <div className="mb-1">
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Hospital: </span>
-                                  <span className="text-gray-900 dark:text-white">{hospitalName}</span>
-                                </div>
-                              )}
-                              {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && clinicName !== 'N/A' && (
-                                <div className="mb-1">
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Clinic: </span>
-                                  <span className="text-gray-900 dark:text-white">{clinicName}</span>
-                                </div>
-                              )}
-                              {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && doctorName !== 'N/A' && (
-                                <div>
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Doctor: </span>
-                                  <span className="text-gray-900 dark:text-white">{doctorName}</span>
-                                </div>
-                              )}
+                          {patient.address && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2" title={patient.address}>
+                              {patient.address}
                             </div>
-                          </td>
-                        )}
-                        <td className="px-4 py-4">
-                          <div 
-                            className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
-                            title={patient.address || undefined}
-                          >
-                            {patient.address || <span className="text-gray-400 dark:text-gray-500">-</span>}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div 
-                            className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
-                            title={patient.diagnosis || undefined}
-                          >
-                            {patient.diagnosis || <span className="text-gray-400 dark:text-gray-500">-</span>}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div 
-                            className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 cursor-help"
-                            title={patient.treatment || undefined}
-                          >
-                            {patient.treatment || <span className="text-gray-400 dark:text-gray-500">-</span>}
-                          </div>
+                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -687,35 +420,32 @@ export default function PatientsPage() {
             <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
               <Search className="h-8 w-8 text-gray-400 dark:text-gray-600" />
             </div>
-            <p className="text-base font-medium text-gray-900 dark:text-white mb-1">No patients found</p>
+            <p className="text-base font-medium text-gray-900 dark:text-white mb-1">No personal doctor patients found</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {searchTerm ? 'Try adjusting your search criteria' : 'Get started by creating a new patient'}
+              {searchTerm ? 'Try adjusting your search criteria' : 'No patients added by Personal Doctors yet'}
             </p>
           </div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
-      {showModal && canCreate && (
+      {/* Edit Modal */}
+      {showModal && editingPatient && canManage && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6"
           onClick={() => setShowModal(false)}
         >
-          {/* Backdrop with blur */}
           <div 
             className="absolute inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setShowModal(false)}
           />
           
-          {/* Modal Content */}
           <div 
             className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl transform transition-all duration-300 scale-100 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 sm:px-6 sm:py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-                {editingPatient ? 'Edit Patient' : 'Create Patient'}
+                Edit Patient
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -728,89 +458,8 @@ export default function PatientsPage() {
               </button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4 sm:px-6 sm:py-5">
               <form id="patient-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                {user?.role === 'SUPER_ADMIN' && !editingPatient && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Hospital <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        required
-                        value={formData.hospitalId}
-                        onChange={(e) => setFormData({ ...formData, hospitalId: e.target.value, clinicId: '', doctorId: '' })}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors"
-                      >
-                        <option value="">Select Hospital</option>
-                        {hospitals.map((h) => (
-                          <option key={h._id} value={h._id}>{h.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Clinic <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        required
-                        value={formData.clinicId}
-                        onChange={(e) => setFormData({ ...formData, clinicId: e.target.value, doctorId: '' })}
-                        disabled={!formData.hospitalId}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">{formData.hospitalId ? 'Select Clinic' : 'Select Hospital first'}</option>
-                        {clinics.map((c) => (
-                          <option key={c._id} value={c._id}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-                {(user?.role === 'SUPER_ADMIN' || user?.role === 'HOSPITAL' || user?.role === 'CLINIC') && !editingPatient && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Doctor <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.doctorId}
-                      onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
-                      disabled={(user?.role === 'SUPER_ADMIN' && !formData.clinicId) || (user?.role === 'HOSPITAL' && !formData.clinicId)}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">
-                        {user?.role === 'SUPER_ADMIN' && !formData.clinicId
-                          ? 'Select Clinic first'
-                          : user?.role === 'HOSPITAL' && !formData.clinicId
-                          ? 'Select Clinic first'
-                          : 'Select Doctor'}
-                      </option>
-                      {doctors.map((d) => (
-                        <option key={d._id} value={d._id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {user?.role === 'HOSPITAL' && !editingPatient && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Clinic <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      required
-                      value={formData.clinicId}
-                      onChange={(e) => setFormData({ ...formData, clinicId: e.target.value, doctorId: '' })}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-colors"
-                    >
-                      <option value="">Select Clinic</option>
-                      {clinics.map((c) => (
-                        <option key={c._id} value={c._id}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Name <span className="text-red-500">*</span>
@@ -884,7 +533,6 @@ export default function PatientsPage() {
               </form>
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 sm:px-6 sm:py-5 border-t border-gray-200 dark:border-gray-700 rounded-b-2xl flex-shrink-0">
               <div className="flex gap-3 sm:gap-4">
                 <button
@@ -900,7 +548,7 @@ export default function PatientsPage() {
                   disabled={formLoading}
                   className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm hover:shadow-md"
                 >
-                  {formLoading ? 'Saving...' : editingPatient ? 'Update' : 'Create'}
+                  {formLoading ? 'Saving...' : 'Update'}
                 </button>
               </div>
             </div>
@@ -910,3 +558,4 @@ export default function PatientsPage() {
     </>
   );
 }
+
