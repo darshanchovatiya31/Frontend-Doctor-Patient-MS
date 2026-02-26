@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import apiService, { Patient, Hospital, Clinic, Doctor } from "../../services/api";
 import swal from '../../utils/swalHelper';
-import { Plus, Search, Edit, Trash2, Download, FileDown } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Download, FileDown, Filter, ChevronDown } from 'lucide-react';
 import { TableSkeleton } from '../../components/common/Skeleton';
 
 export default function PatientsPage() {
@@ -20,6 +20,15 @@ export default function PatientsPage() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [formLoading, setFormLoading] = useState(false);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    hospitalId: '',
+    clinicId: '',
+    doctorId: '',
+  });
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -41,7 +50,7 @@ export default function PatientsPage() {
       }
     }
     fetchPatients();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, filters.hospitalId, filters.clinicId, filters.doctorId]);
 
   // Fetch doctors when clinic is selected (for super admin)
   useEffect(() => {
@@ -69,11 +78,25 @@ export default function PatientsPage() {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getPatients({
+      const params: any = {
         page: currentPage,
         limit,
         search: searchTerm || undefined,
-      });
+      };
+
+      // Add filters based on role
+      if (user?.role === 'SUPER_ADMIN') {
+        if (filters.hospitalId) params.hospitalId = filters.hospitalId;
+        if (filters.clinicId) params.clinicId = filters.clinicId;
+        if (filters.doctorId) params.doctorId = filters.doctorId;
+      } else if (user?.role === 'HOSPITAL') {
+        if (filters.clinicId) params.clinicId = filters.clinicId;
+        if (filters.doctorId) params.doctorId = filters.doctorId;
+      } else if (user?.role === 'CLINIC') {
+        if (filters.doctorId) params.doctorId = filters.doctorId;
+      }
+
+      const response = await apiService.getPatients(params);
 
       if (response.status === 200 && response.data) {
         setPatients(response.data.docs || []);
@@ -95,6 +118,55 @@ export default function PatientsPage() {
     setCurrentPage(1);
     fetchPatients();
   };
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setShowFilterDropdown(false);
+      }
+    };
+
+    if (showFilterDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
+
+  // Fetch clinics when hospital filter changes (for super admin)
+  useEffect(() => {
+    if (user?.role === 'SUPER_ADMIN' && filters.hospitalId) {
+      fetchClinicsForHospital(filters.hospitalId);
+      setFilters(prev => ({ ...prev, clinicId: '', doctorId: '' }));
+    }
+  }, [filters.hospitalId]);
+
+  // Fetch doctors when clinic filter changes
+  useEffect(() => {
+    if (filters.clinicId) {
+      if (user?.role === 'SUPER_ADMIN') {
+        fetchDoctorsForClinic(filters.clinicId);
+      } else if (user?.role === 'HOSPITAL') {
+        fetchDoctorsForClinic(filters.clinicId);
+      }
+      setFilters(prev => ({ ...prev, doctorId: '' }));
+    }
+  }, [filters.clinicId]);
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ hospitalId: '', clinicId: '', doctorId: '' });
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = filters.hospitalId || filters.clinicId || filters.doctorId;
 
   const handleDelete = async (id: string) => {
     try {
@@ -148,9 +220,15 @@ export default function PatientsPage() {
     }
   };
 
-  const fetchClinicsForHospital = async () => {
+  const fetchClinicsForHospital = async (hospitalId?: string) => {
     try {
-      const response = await apiService.getClinics({ page: 1, limit: 1000, isActive: 'active' });
+      const params: any = { page: 1, limit: 1000, isActive: 'active' };
+      if (hospitalId) {
+        params.hospitalId = hospitalId;
+      } else if (user?.role === 'HOSPITAL') {
+        params.hospitalId = user._id;
+      }
+      const response = await apiService.getClinics(params);
       if (response.status === 200 && response.data) {
         setClinics(response.data.docs || []);
       }
@@ -178,9 +256,18 @@ export default function PatientsPage() {
     }
   };
 
-  const fetchDoctorsForClinic = async () => {
+  const fetchDoctorsForClinic = async (clinicId?: string) => {
     try {
-      const response = await apiService.getDoctors({ page: 1, limit: 1000, isActive: 'active' });
+      const params: any = { page: 1, limit: 1000, isActive: 'active' };
+      if (clinicId) {
+        params.clinicId = clinicId;
+      } else if (user?.role === 'CLINIC') {
+        params.clinicId = user._id;
+      } else if (user?.role === 'HOSPITAL') {
+        // For hospital, we need to get clinics first, but this function is for doctors
+        // So we'll use the clinicId parameter
+      }
+      const response = await apiService.getDoctors(params);
       if (response.status === 200 && response.data) {
         setDoctors(response.data.docs || []);
       }
@@ -348,27 +435,138 @@ export default function PatientsPage() {
               className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 pl-10 pr-4 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-all"
             />
           </div>
-          {/* Export buttons on desktop - replace search button */}
-          {canExport && (
-            <div className="hidden sm:flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleExport('excel')}
-                className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 shadow-sm hover:shadow transition-all"
-              >
-                <FileDown className="h-4 w-4" />
-                Export Excel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport('pdf')}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 shadow-sm hover:shadow transition-all"
-              >
-                <Download className="h-4 w-4" />
-                Export PDF
-              </button>
-            </div>
-          )}
+          {/* Filter and Export buttons */}
+          <div className="flex gap-2">
+            {/* Filter Button - Show for roles that can filter */}
+            {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
+              <div className="relative" ref={filterDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                    hasActiveFilters
+                      ? 'border-brand-600 bg-brand-600/10 text-brand-600 dark:border-brand-400 dark:bg-brand-600/20 dark:text-brand-400'
+                      : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filters</span>
+                  {hasActiveFilters && (
+                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-brand-600 text-white text-xs">
+                      {(filters.hospitalId ? 1 : 0) + (filters.clinicId ? 1 : 0) + (filters.doctorId ? 1 : 0)}
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                
+                {showFilterDropdown && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-20 p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Filters</h3>
+                        {hasActiveFilters && (
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Hospital Filter - Super Admin only */}
+                      {userRole === 'SUPER_ADMIN' && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Hospital
+                          </label>
+                          <select
+                            value={filters.hospitalId}
+                            onChange={(e) => handleFilterChange('hospitalId', e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          >
+                            <option value="">All Hospitals</option>
+                            {hospitals.map((hospital) => (
+                              <option key={hospital._id} value={hospital._id}>
+                                {hospital.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      {/* Clinic Filter - Super Admin and Hospital */}
+                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Clinic
+                          </label>
+                          <select
+                            value={filters.clinicId}
+                            onChange={(e) => handleFilterChange('clinicId', e.target.value)}
+                            disabled={userRole === 'SUPER_ADMIN' && !filters.hospitalId}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">All Clinics</option>
+                            {clinics.map((clinic) => (
+                              <option key={clinic._id} value={clinic._id}>
+                                {clinic.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      
+                      {/* Doctor Filter - Super Admin, Hospital, and Clinic */}
+                      {(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC') && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Doctor
+                          </label>
+                          <select
+                            value={filters.doctorId}
+                            onChange={(e) => handleFilterChange('doctorId', e.target.value)}
+                            disabled={(userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL') && !filters.clinicId}
+                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">All Doctors</option>
+                            {doctors.map((doctor) => (
+                              <option key={doctor._id} value={doctor._id}>
+                                {doctor.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Export buttons on desktop */}
+            {canExport && (
+              <div className="hidden sm:flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExport('excel')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 shadow-sm hover:shadow transition-all"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('pdf')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 shadow-sm hover:shadow transition-all"
+                >
+                  <Download className="h-4 w-4" />
+                  Export PDF
+                </button>
+              </div>
+            )}
+          </div>
         </form>
       </div>
 
