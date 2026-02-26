@@ -34,12 +34,7 @@ export default function PatientForm() {
           }
         }
         
-        // Check permissions for editing
-        if (isEdit && userData.role === 'DOCTOR') {
-          swal.error('Error', 'Doctors cannot edit patients');
-          navigate('/hospital/patients');
-          return;
-        }
+        // Doctors can now edit their own patients
       } catch (e) {
         console.error('Error parsing user:', e);
       }

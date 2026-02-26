@@ -218,9 +218,12 @@ export default function PersonalDoctorPatientsPage() {
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-0.5">
                           {patient.name}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <a 
+                          href={`tel:${patient.mobile}`}
+                          className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline transition-colors"
+                        >
                           {patient.mobile}
-                        </p>
+                        </a>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -308,9 +311,12 @@ export default function PersonalDoctorPatientsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                          <a 
+                            href={`tel:${patient.mobile}`}
+                            className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline transition-colors"
+                          >
                             {patient.mobile}
-                          </div>
+                          </a>
                           {patient.address && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2" title={patient.address}>
                               {patient.address}

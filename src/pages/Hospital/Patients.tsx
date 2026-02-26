@@ -288,7 +288,10 @@ export default function PatientsPage() {
   };
 
   const userRole = user?.role || '';
-  const canManage = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'PERSONAL_DOCTOR';
+  const canEdit = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'DOCTOR' || userRole === 'PERSONAL_DOCTOR';
+  const canDelete = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'PERSONAL_DOCTOR';
+  const canExport = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'PERSONAL_DOCTOR';
+  const canManage = canEdit || canDelete; // For showing Actions column header
   const canCreate = userRole === 'SUPER_ADMIN' || userRole === 'HOSPITAL' || userRole === 'CLINIC' || userRole === 'DOCTOR' || userRole === 'PERSONAL_DOCTOR';
 
   return (
@@ -299,7 +302,7 @@ export default function PatientsPage() {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Patients</h2>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and monitor all patients</p>
             {/* Export buttons on mobile - below name */}
-            {canManage && (
+            {canExport && (
               <div className="flex flex-wrap gap-2 mt-3 sm:hidden">
                 <button
                   onClick={() => handleExport('excel')}
@@ -346,7 +349,7 @@ export default function PatientsPage() {
             />
           </div>
           {/* Export buttons on desktop - replace search button */}
-          {canManage && (
+          {canExport && (
             <div className="hidden sm:flex gap-2">
               <button
                 type="button"
@@ -393,9 +396,12 @@ export default function PatientsPage() {
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-0.5">
                           {patient.name}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <a 
+                          href={`tel:${patient.mobile}`}
+                          className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline transition-colors"
+                        >
                           {patient.mobile}
-                        </p>
+                        </a>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -469,20 +475,24 @@ export default function PatientsPage() {
                     </div>
 
                     {/* Actions */}
-                    {canManage && (
+                    {(canEdit || canDelete) && (
                       <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <button
-                          onClick={() => handleEdit(patient)}
-                          className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-md transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(patient._id)}
-                          className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                        >
-                          Delete
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEdit(patient)}
+                            className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-md transition-colors"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(patient._id)}
+                            className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -529,9 +539,12 @@ export default function PatientsPage() {
                           <div className="text-sm font-semibold text-gray-900 dark:text-white">
                             {patient.name}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          <a 
+                            href={`tel:${patient.mobile}`}
+                            className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 hover:underline transition-colors mt-0.5"
+                          >
                             {patient.mobile}
-                          </div>
+                          </a>
                         </td>
                         {userRole !== 'DOCTOR' && userRole !== 'PERSONAL_DOCTOR' && (
                           <td className="px-4 py-4">
@@ -599,23 +612,27 @@ export default function PatientsPage() {
                             })}
                           </div>
                         </td>
-                        {canManage && (
+                        {(canEdit || canDelete) && (
                           <td className="px-4 py-4">
                             <div className="flex justify-end gap-1.5">
-                              <button
-                                onClick={() => handleEdit(patient)}
-                                className="p-2 text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-lg transition-colors"
-                                title="Edit"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(patient._id)}
-                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleEdit(patient)}
+                                  className="p-2 text-brand-600 hover:bg-brand-600/10 dark:hover:bg-brand-600/20 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(patient._id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         )}
