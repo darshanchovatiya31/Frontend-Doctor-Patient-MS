@@ -98,8 +98,20 @@ export default function SignInForm() {
   return (
     <div className="relative z-10 flex flex-col items-center">
       <Link to="/" className="">
-        <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center" style={{ backgroundColor: '#0891b2' }}>
-          <span className="text-2xl sm:text-3xl font-bold text-white">P</span>
+        <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center overflow-hidden">
+          <img 
+            src="/icon/logo.png" 
+            alt="Patients-MS Logo" 
+            className="h-full w-full object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src.includes('/icon/logo')) {
+                target.src = '/icons/icon-192x192.png';
+              } else if (target.src.includes('/icons/icon-192x192')) {
+                target.src = '/favicon.png';
+              }
+            }}
+          />
         </div>
       </Link>
       <h1 className="mb-2  mt-2 text-2xl font-bold text-gray-800 dark:text-white text-center">

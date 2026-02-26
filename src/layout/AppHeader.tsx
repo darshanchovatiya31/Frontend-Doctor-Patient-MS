@@ -51,8 +51,20 @@ const AppHeader: React.FC = () => {
           </button>
 
           <Link to="/" className="lg:hidden">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0891b2' }}>
-              <span className="text-white font-bold text-sm sm:text-base">P</span>
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img 
+                src="/icon/logo.png" 
+                alt="Patients-MS Logo" 
+                className="h-full w-full object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.includes('/icon/logo')) {
+                    target.src = '/icons/icon-192x192.png';
+                  } else if (target.src.includes('/icons/icon-192x192')) {
+                    target.src = '/favicon.png';
+                  }
+                }}
+              />
             </div>
           </Link>
         </div>
