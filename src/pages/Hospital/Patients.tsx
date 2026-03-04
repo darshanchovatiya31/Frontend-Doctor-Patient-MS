@@ -11,7 +11,7 @@ export default function PatientsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDocs, setTotalDocs] = useState(0);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [user, setUser] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -50,7 +50,7 @@ export default function PatientsPage() {
       }
     }
     fetchPatients();
-  }, [currentPage, searchTerm, filters.hospitalId, filters.clinicId, filters.doctorId]);
+  }, [currentPage, searchTerm, limit, filters.hospitalId, filters.clinicId, filters.doctorId]);
 
   // Fetch doctors when clinic is selected (for super admin)
   useEffect(() => {
@@ -117,6 +117,11 @@ export default function PatientsPage() {
     e.preventDefault();
     setCurrentPage(1);
     fetchPatients();
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when changing limit
   };
 
   // Close filter dropdown when clicking outside
@@ -842,57 +847,53 @@ export default function PatientsPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {(totalPages > 1 || totalDocs > 0) && (
               <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 px-4 py-3 sm:px-6">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Showing <span className="font-medium text-gray-900 dark:text-white">{(currentPage - 1) * limit + 1}</span> to{' '}
-                    <span className="font-medium text-gray-900 dark:text-white">{Math.min(currentPage * limit, totalDocs)}</span> of{' '}
-                    <span className="font-medium text-gray-900 dark:text-white">{totalDocs}</span> patients
-                  </div>
-                  <nav className="flex items-center gap-1" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {[...Array(totalPages)].map((_, i) => {
-                        const page = i + 1;
-                        if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                          return (
-                            <button
-                              key={page}
-                              onClick={() => setCurrentPage(page)}
-                              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                                currentPage === page
-                                  ? 'bg-brand-600 text-white'
-                                  : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          );
-                        } else if (page === currentPage - 2 || page === currentPage + 2) {
-                          return (
-                            <span key={page} className="px-2 text-sm text-gray-500 dark:text-gray-500">
-                              ...
-                            </span>
-                          );
-                        }
-                        return null;
-                      })}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Showing <span className="font-medium text-gray-900 dark:text-white">{(currentPage - 1) * limit + 1}</span> to{' '}
+                      <span className="font-medium text-gray-900 dark:text-white">{Math.min(currentPage * limit, totalDocs)}</span> of{' '}
+                      <span className="font-medium text-gray-900 dark:text-white">{totalDocs}</span> patients
                     </div>
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      Next
-                    </button>
-                  </nav>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        Show:
+                      </label>
+                      <select
+                        value={limit}
+                        onChange={(e) => handleLimitChange(Number(e.target.value))}
+                        className="pe-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 transition-colors cursor-pointer"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                  </div>
+                  {totalPages > 1 && (
+                    <nav className="flex items-center gap-2" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 px-2">
+                        <span className="text-gray-900 dark:text-white">{currentPage}</span> of{' '}
+                        <span className="text-gray-900 dark:text-white">{totalPages}</span>
+                      </div>
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  )}
                 </div>
               </div>
             )}
